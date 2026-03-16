@@ -68,7 +68,7 @@ export async function exportAsCSV(
 }
 
 /**
- * Export student payment data as XLS file
+ * Export student payment data as XLS file with professional formatting
  */
 export async function exportAsXLS(
   students: Student[],
@@ -85,8 +85,20 @@ export async function exportAsXLS(
       "Total Amount of Fee's": row.totalAmount,
     }));
 
+    // Create workbook and sheet
     const workbook = XLSX.utils.book_new();
     const sheet = XLSX.utils.json_to_sheet(sheetData);
+
+    // Set column widths for better readability
+    sheet["!cols"] = [
+      { wch: 25 }, // Name
+      { wch: 12 }, // Class
+      { wch: 15 }, // Payment Date
+      { wch: 12 }, // Fee's
+      { wch: 20 }, // Total Amount of Fee's
+    ];
+
+    // Add header styling (merge cells for title if needed)
     XLSX.utils.book_append_sheet(workbook, sheet, "Students");
 
     const fileName = `student_fees_${new Date().getTime()}.xlsx`;

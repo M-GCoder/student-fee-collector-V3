@@ -174,3 +174,17 @@
 - [x] Create reminder history tracking
 - [x] Test recurring reminder scheduling
 - [x] Test reminder notifications at scheduled times
+
+
+## Bulk Import & Export Fixes (Current Sprint)
+
+- [x] Fix bulk import XLS file parsing
+- [x] Fix bulk import error handling and validation
+- [x] Fix export as Excel file functionality
+- [x] Add download sample template feature
+- [x] Improve column name flexibility in bulk import
+- [x] Add professional Excel formatting (column widths)
+- [x] Test bulk import with sample XLS file
+- [x] Test export as Excel with student data
+- [x] Verify imported data is correctly stored
+- [x] Verify exported Excel file format and content

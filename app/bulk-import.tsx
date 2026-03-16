@@ -9,6 +9,7 @@ import {
   pickAndParseXLSFile,
   validateAndProcessStudents,
   formatImportErrors,
+  downloadSampleTemplate,
 } from "@/lib/bulk-import-service";
 
 export default function BulkImportScreen() {
@@ -86,6 +87,19 @@ export default function BulkImportScreen() {
     setImportResult(null);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      setLoading(true);
+      await downloadSampleTemplate();
+      Alert.alert("Success", "Sample template downloaded successfully!");
+    } catch (error) {
+      Alert.alert("Error", "Failed to download template");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -143,10 +157,28 @@ export default function BulkImportScreen() {
             {/* Template Info */}
             <View className="bg-primary/10 rounded-lg p-4 border border-primary/20 mt-6">
               <Text className="text-sm font-semibold text-foreground mb-2">File Format</Text>
-              <Text className="text-xs text-muted">
+              <Text className="text-xs text-muted mb-3">
                 Required columns: Student Name, Class, Monthly Fee{"\n"}
                 Example: John Doe | 10-A | 5000
               </Text>
+              <TouchableOpacity
+                onPress={handleDownloadTemplate}
+                disabled={loading}
+                style={{
+                  backgroundColor: colors.primary,
+                  borderRadius: 6,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: loading ? 0.6 : 1,
+                }}
+                activeOpacity={0.8}
+              >
+                <MaterialIcons name="download" size={16} color="#ffffff" />
+                <Text className="text-white font-semibold text-xs ml-2">Download Template</Text>
+              </TouchableOpacity>
             </View>
           </>
         ) : (
