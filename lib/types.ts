@@ -6,6 +6,7 @@ export interface Student {
   name: string;
   class: string;
   monthlyFee: number;
+  dueDate?: string; // ISO date string (optional, for payment deadline)
   createdAt: string;
 }
 

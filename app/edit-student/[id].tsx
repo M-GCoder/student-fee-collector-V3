@@ -6,6 +6,7 @@ import { useStudents } from "@/lib/student-context";
 import { Student, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function EditStudentScreen() {
   const router = useRouter();
@@ -17,6 +18,8 @@ export default function EditStudentScreen() {
   const [name, setName] = useState("");
   const [studentClass, setStudentClass] = useState("");
   const [fee, setFee] = useState("");
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -28,6 +31,9 @@ export default function EditStudentScreen() {
         setName(found.name);
         setStudentClass(found.class);
         setFee(found.monthlyFee.toString());
+        if (found.dueDate) {
+          setDueDate(new Date(found.dueDate));
+        }
       }
       setLoading(false);
     }
@@ -59,6 +65,7 @@ export default function EditStudentScreen() {
         name: name.trim(),
         class: studentClass.trim(),
         monthlyFee: parseFloat(fee),
+        dueDate: dueDate ? dueDate.toISOString() : undefined,
       };
       await updateStudent(updatedStudent);
       Alert.alert("Success", "Student updated successfully");
@@ -68,6 +75,13 @@ export default function EditStudentScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setDueDate(selectedDate);
+    }
+    setShowDatePicker(false);
   };
 
   if (loading) {
@@ -98,16 +112,6 @@ export default function EditStudentScreen() {
             <Text className="text-2xl font-bold text-foreground">Edit Student</Text>
             <Text className="text-sm text-muted mt-1">Update student details</Text>
           </View>
-        </View>
-
-        {/* Info Card */}
-        <View className="bg-primary/10 rounded-lg p-3 mb-6 border border-primary/20">
-          <Text className="text-xs text-muted">Student ID</Text>
-          <Text className="text-sm font-semibold text-foreground mt-1">{student.id}</Text>
-          <Text className="text-xs text-muted mt-2">Created on</Text>
-          <Text className="text-sm font-semibold text-foreground mt-1">
-            {new Date(student.createdAt).toLocaleDateString("en-IN")}
-          </Text>
         </View>
 
         {/* Form */}
@@ -175,7 +179,55 @@ export default function EditStudentScreen() {
               editable={!saving}
             />
           </View>
+
+          {/* Due Date Field */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Payment Due Date (Optional)</Text>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              disabled={saving}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: colors.surface,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: dueDate ? colors.foreground : colors.muted }}>
+                {dueDate
+                  ? dueDate.toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Select due date"}
+              </Text>
+              <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
+            </TouchableOpacity>
+            {dueDate && (
+              <TouchableOpacity
+                onPress={() => setDueDate(null)}
+                style={{ marginTop: 8 }}
+              >
+                <Text className="text-xs text-primary">Clear date</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
 
         {/* Buttons */}
         <View className="gap-3 mt-auto">

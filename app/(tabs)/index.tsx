@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Payment, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
+import { getPaymentStatus, getDueDateMessage } from "@/lib/due-date-service";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -58,7 +59,19 @@ export default function HomeScreen() {
   };
 
   const renderStudentItem = ({ item }: { item: (typeof students)[0] }) => {
-    const isPaid = studentPaymentStatus[item.id];
+    const status = getPaymentStatus(item, payments);
+    const statusMessage = getDueDateMessage(item, payments);
+    
+    let statusColor = colors.warning;
+    let statusIcon = "schedule";
+    
+    if (status === "paid") {
+      statusColor = colors.success;
+      statusIcon = "check-circle";
+    } else if (status === "overdue") {
+      statusColor = colors.error;
+      statusIcon = "error";
+    }
     return (
       <TouchableOpacity
         onPress={() => handleStudentPress(item.id)}
@@ -71,18 +84,17 @@ export default function HomeScreen() {
             <Text className="text-sm text-muted mt-1">
               Class: {item.class} | Fee: {CURRENCY_SYMBOL}{item.monthlyFee}
             </Text>
+            <Text className="text-xs mt-2" style={{ color: statusColor }}>
+              {statusMessage}
+            </Text>
           </View>
           <View className="items-center ml-4">
-            {isPaid ? (
-              <View className="bg-success rounded-full p-2">
-                <MaterialIcons name="check" size={20} color="#ffffff" />
-              </View>
-            ) : (
-              <View className="bg-warning rounded-full p-2">
-                <MaterialIcons name="schedule" size={20} color="#ffffff" />
-              </View>
-            )}
-            <Text className="text-xs text-muted mt-1">{isPaid ? "Paid" : "Pending"}</Text>
+            <View className="rounded-full p-2" style={{ backgroundColor: statusColor }}>
+              <MaterialIcons name={statusIcon as any} size={20} color="#ffffff" />
+            </View>
+            <Text className="text-xs text-muted mt-1 text-center" style={{ maxWidth: 50 }}>
+              {status === "paid" ? "Paid" : status === "overdue" ? "Due" : "Pending"}
+            </Text>
           </View>
         </View>
       </TouchableOpacity>

@@ -6,6 +6,7 @@ import { useStudents } from "@/lib/student-context";
 import { Student, Payment, MONTH_SHORT, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
+import { getPaymentStatus, getDueDateMessage, formatDueDate } from "@/lib/due-date-service";
 
 export default function StudentDetailScreen() {
   const router = useRouter();
@@ -136,9 +137,44 @@ export default function StudentDetailScreen() {
             <Text className="text-sm text-muted">Monthly Fee</Text>
             <Text className="text-lg font-bold text-foreground">{CURRENCY_SYMBOL}{student.monthlyFee}</Text>
           </View>
-          <View className="flex-row justify-between items-center">
+          <View className="flex-row justify-between items-center mb-3">
             <Text className="text-sm text-muted">Year</Text>
             <Text className="text-lg font-bold text-foreground">{currentYear}</Text>
+          </View>
+          
+          {/* Due Date and Status */}
+          <View className="pt-3 border-t border-border">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-sm text-muted">Payment Status</Text>
+              <View className="flex-row items-center">
+                {getPaymentStatus(student, studentPayments) === "overdue" ? (
+                  <>
+                    <MaterialIcons name="error" size={18} color={colors.error} style={{ marginRight: 6 }} />
+                    <Text className="text-sm font-semibold" style={{ color: colors.error }}>
+                      {getDueDateMessage(student, studentPayments)}
+                    </Text>
+                  </>
+                ) : getPaymentStatus(student, studentPayments) === "paid" ? (
+                  <>
+                    <MaterialIcons name="check-circle" size={18} color={colors.success} style={{ marginRight: 6 }} />
+                    <Text className="text-sm font-semibold" style={{ color: colors.success }}>Paid</Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialIcons name="schedule" size={18} color={colors.warning} style={{ marginRight: 6 }} />
+                    <Text className="text-sm font-semibold" style={{ color: colors.warning }}>
+                      {getDueDateMessage(student, studentPayments)}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </View>
+            {student.dueDate && (
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-muted">Due Date</Text>
+                <Text className="text-sm font-semibold text-foreground">{formatDueDate(student.dueDate)}</Text>
+              </View>
+            )}
           </View>
         </View>
 

@@ -188,3 +188,37 @@
 - [x] Test export as Excel with student data
 - [x] Verify imported data is correctly stored
 - [x] Verify exported Excel file format and content
+
+
+## Due Date Feature (New)
+
+- [ ] Update Student type to include dueDate field
+- [ ] Update student context to handle due date
+- [ ] Create due date picker component
+- [ ] Add due date field to Add Student screen
+- [ ] Add due date field to Edit Student screen
+- [ ] Create overdue status logic utility
+- [ ] Add due date display to Student Detail screen
+- [ ] Add due date display to Student List screen
+- [ ] Add red warning icon for overdue payments
+- [ ] Update payment history to show due date comparison
+- [ ] Test due date feature with various dates
+- [ ] Test overdue status calculation
+- [ ] Verify visual indicators display correctly
+
+
+## Due Date Feature - COMPLETED
+
+- [x] Update Student type to include dueDate field
+- [x] Update student context to handle due date
+- [x] Create due date picker component
+- [x] Add due date field to Add Student screen
+- [x] Add due date field to Edit Student screen
+- [x] Create overdue status logic utility
+- [x] Add due date display to Student Detail screen
+- [x] Add due date display to Student List screen
+- [x] Add red warning icon for overdue payments
+- [x] Update payment history to show due date comparison
+- [x] Test due date feature with various dates
+- [x] Test overdue status calculation
+- [x] Verify visual indicators display correctly
