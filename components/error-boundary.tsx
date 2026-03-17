@@ -144,9 +144,16 @@ function ErrorDisplay({
 
         <TouchableOpacity
           onPress={() => {
-            // Force app restart by reloading
-            if (typeof window !== "undefined") {
-              window.location.reload();
+            // Safe restart for both web and native
+            try {
+              if (typeof window !== "undefined" && typeof window.location !== "undefined") {
+                window.location.reload();
+              } else {
+                // On native, just reset the error state — user can restart manually
+                onReset();
+              }
+            } catch {
+              onReset();
             }
           }}
           style={{
