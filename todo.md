@@ -222,3 +222,19 @@
 - [x] Test due date feature with various dates
 - [x] Test overdue status calculation
 - [x] Verify visual indicators display correctly
+
+
+## APK Crash Debugging (Current Sprint)
+
+- [x] Check app.config.ts for missing or invalid configuration
+- [x] Verify all native modules are properly declared
+- [x] Fix AsyncStorage initialization and error handling
+- [x] Check for missing permissions in AndroidManifest
+- [x] Verify date-time picker compatibility on Android
+- [x] Add global error boundary for crash prevention
+- [x] Verify all imports and dependencies are correct
+- [x] Check for runtime errors in context providers
+- [x] Create safe storage service with initialization
+- [x] Add splash loader component for graceful loading
+- [x] Disable React Compiler for Android compatibility
+- [x] Add comprehensive error handling to home screen

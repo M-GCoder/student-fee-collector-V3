@@ -8,6 +8,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { getPaymentStatus, getDueDateMessage } from "@/lib/due-date-service";
 
+import { SplashLoader } from "@/components/splash-loader";
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
@@ -101,6 +103,10 @@ export default function HomeScreen() {
     );
   };
 
+  if (loading) {
+    return <SplashLoader />;
+  }
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -109,6 +115,17 @@ export default function HomeScreen() {
           <Text className="text-3xl font-bold text-foreground">Students</Text>
           <Text className="text-sm text-muted mt-1">Manage student fee collection</Text>
         </View>
+
+        {/* Error State */}
+        {error && (
+          <View className="bg-error rounded-lg p-4 mb-4 border border-error">
+            <Text className="text-sm text-white font-semibold">Error: {error}</Text>
+            <TouchableOpacity onPress={refreshData} style={{ marginTop: 8 }}>
+              <Text className="text-sm text-white underline">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
 
         {/* Search Bar */}
         <View className="mb-4 flex-row items-center bg-surface rounded-lg border border-border px-3 py-2">

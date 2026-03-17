@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Student, Payment, StudentWithPayments } from "./types";
-import * as storage from "./storage";
+import * as storage from "./storage-safe";
 
 interface StudentContextType {
   students: Student[];
@@ -32,24 +32,41 @@ export function StudentProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load data on mount
+  // Load data on mount with initialization
   useEffect(() => {
-    refreshData();
+    const initAndLoad = async () => {
+      try {
+        await storage.initializeStorage();
+        await refreshData();
+      } catch (err) {
+        console.error("Failed to initialize storage:", err);
+        setError("Failed to initialize app storage");
+      }
+    };
+    initAndLoad();
   }, []);
 
   const refreshData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [studentsData, paymentsData] = await Promise.all([storage.getStudents(), storage.getPayments()]);
-      setStudents(studentsData);
-      setPayments(paymentsData);
+      const [studentsData, paymentsData] = await Promise.all([
+        storage.getStudents(),
+        storage.getPayments(),
+      ]);
+      setStudents(studentsData || []);
+      setPayments(paymentsData || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      const errorMsg = err instanceof Error ? err.message : "An error occurred while loading data";
+      console.error("Refresh data error:", errorMsg);
+      setError(errorMsg);
+      // Set empty data to allow app to continue
+      setStudents([]);
+      setPayments([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const addStudent = async (studentData: Omit<Student, "id" | "createdAt">) => {
     try {
