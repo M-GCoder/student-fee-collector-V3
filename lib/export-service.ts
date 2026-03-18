@@ -4,6 +4,31 @@ import XLSX from "xlsx";
 import { Student, Payment, CURRENCY_SYMBOL } from "./types";
 
 /**
+ * Shared helper to write file and trigger share dialog
+ */
+async function writeAndShare(
+  fileName: string,
+  content: string,
+  mimeType: string,
+  dialogTitle: string,
+  encoding?: FileSystem.EncodingType
+): Promise<string> {
+  const filePath = `${FileSystem.cacheDirectory}${fileName}`;
+  
+  if (encoding) {
+    await FileSystem.writeAsStringAsync(filePath, content, { encoding });
+  } else {
+    await FileSystem.writeAsStringAsync(filePath, content);
+  }
+
+  if (await Sharing.isAvailableAsync()) {
+    await Sharing.shareAsync(filePath, { mimeType, dialogTitle });
+  }
+
+  return filePath;
+}
+
+/**
  * Build the export rows for all students.
  * Each row has: Name, Class, Payment Date (or "Pending"), Fee's, Total Amount of Fee's
  */
@@ -49,18 +74,12 @@ export async function exportAsCSV(
     }
 
     const fileName = `student_fees_${new Date().getTime()}.csv`;
-    const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-
-    await FileSystem.writeAsStringAsync(filePath, csvContent);
-
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(filePath, {
-        mimeType: "text/csv",
-        dialogTitle: "Export Student Fee Data (CSV)",
-      });
-    }
-
-    return filePath;
+    return await writeAndShare(
+      fileName,
+      csvContent,
+      "text/csv",
+      "Export Student Fee Data (CSV)"
+    );
   } catch (error) {
     console.error("Error exporting CSV:", error);
     throw error;
@@ -68,7 +87,7 @@ export async function exportAsCSV(
 }
 
 /**
- * Export student payment data as XLS file with professional formatting
+ * Export student payment data as XLS file
  */
 export async function exportAsXLS(
   students: Student[],
@@ -85,40 +104,20 @@ export async function exportAsXLS(
       "Total Amount of Fee's": row.totalAmount,
     }));
 
-    // Create workbook and sheet
     const workbook = XLSX.utils.book_new();
     const sheet = XLSX.utils.json_to_sheet(sheetData);
-
-    // Set column widths for better readability
-    sheet["!cols"] = [
-      { wch: 25 }, // Name
-      { wch: 12 }, // Class
-      { wch: 15 }, // Payment Date
-      { wch: 12 }, // Fee's
-      { wch: 20 }, // Total Amount of Fee's
-    ];
-
-    // Add header styling (merge cells for title if needed)
     XLSX.utils.book_append_sheet(workbook, sheet, "Students");
 
     const fileName = `student_fees_${new Date().getTime()}.xlsx`;
-    const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-
     const xlsxData = XLSX.write(workbook, { type: "base64", bookType: "xlsx" });
 
-    await FileSystem.writeAsStringAsync(filePath, xlsxData, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(filePath, {
-        mimeType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        dialogTitle: "Export Student Fee Data (XLS)",
-      });
-    }
-
-    return filePath;
+    return await writeAndShare(
+      fileName,
+      xlsxData as string,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Export Student Fee Data (XLS)",
+      FileSystem.EncodingType.Base64
+    );
   } catch (error) {
     console.error("Error exporting XLS:", error);
     throw error;
@@ -196,18 +195,12 @@ export async function exportAsPDF(
     `;
 
     const fileName = `student_fees_${new Date().getTime()}.html`;
-    const filePath = `${FileSystem.cacheDirectory}${fileName}`;
-
-    await FileSystem.writeAsStringAsync(filePath, htmlContent);
-
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(filePath, {
-        mimeType: "text/html",
-        dialogTitle: "Export Student Fee Data (PDF/HTML)",
-      });
-    }
-
-    return filePath;
+    return await writeAndShare(
+      fileName,
+      htmlContent,
+      "text/html",
+      "Export Student Fee Data (PDF/HTML)"
+    );
   } catch (error) {
     console.error("Error exporting PDF:", error);
     throw error;
