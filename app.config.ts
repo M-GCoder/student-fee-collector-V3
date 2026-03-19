@@ -1,10 +1,5 @@
 // Load environment variables with proper priority (system > .env)
-// Wrapped in try-catch because load-env.js uses ESM syntax that may fail during native builds
-try {
-  require("./scripts/load-env.js");
-} catch {
-  // Ignore — env variables may not be needed for native builds
-}
+import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 // Bundle ID format: space.manus.<project_name_dots>.<timestamp>
@@ -51,7 +46,7 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
-  newArchEnabled: false,
+  newArchEnabled: true,
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
@@ -97,6 +92,19 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     [
+      "expo-audio",
+      {
+        microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
+      },
+    ],
+    [
+      "expo-video",
+      {
+        supportsBackgroundPlayback: true,
+        supportsPictureInPicture: true,
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",
@@ -114,8 +122,6 @@ const config: ExpoConfig = {
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
-          enableProguardInReleaseBuilds: false, // Prevent stripping needed native classes
-          enableShrinkResources: false, // Prevent removing needed resources
         },
       },
     ],
