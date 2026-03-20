@@ -8,6 +8,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { getPaymentStatus, getDueDateMessage, formatDueDate } from "@/lib/due-date-service";
 import { getMonthlyDueStatusMessage, getMonthlyDueStatusColor, formatMonthlyDueDate } from "@/lib/monthly-due-date-service";
+import { YearSelector } from "@/components/year-selector";
 
 export default function StudentDetailScreen() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function StudentDetailScreen() {
   const [student, setStudent] = useState<Student | null>(null);
   const [studentPayments, setStudentPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -29,18 +31,17 @@ export default function StudentDetailScreen() {
     }
   }, [id, students, payments]);
 
-  const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
 
   // Calculate current month payments
   const currentMonthPayments = studentPayments.filter(
-    (p) => p.month === currentMonth && p.year === currentYear
+    (p) => p.month === currentMonth && p.year === selectedYear
   ).length;
 
   const handleMarkPayment = async (month: number) => {
     if (!student) return;
 
-    const existingPayment = studentPayments.find((p) => p.month === month && p.year === currentYear);
+    const existingPayment = studentPayments.find((p) => p.month === month && p.year === selectedYear);
 
     if (existingPayment) {
       Alert.alert(
@@ -63,7 +64,7 @@ export default function StudentDetailScreen() {
       );
     } else {
       try {
-        await addPayment(student.id, month, currentYear);
+        await addPayment(student.id, month, selectedYear);
       } catch (error) {
         Alert.alert("Error", "Failed to mark payment");
       }
@@ -140,7 +141,7 @@ export default function StudentDetailScreen() {
           </View>
           <View className="flex-row justify-between items-center mb-3">
             <Text className="text-sm text-muted">Year</Text>
-            <Text className="text-lg font-bold text-foreground">{currentYear}</Text>
+            <Text className="text-lg font-bold text-foreground">{selectedYear}</Text>
           </View>
           
           {/* Due Date and Status */}
@@ -185,6 +186,9 @@ export default function StudentDetailScreen() {
           </View>
         </View>
 
+        {/* Year Selector */}
+        <YearSelector year={selectedYear} onYearChange={setSelectedYear} />
+
         {/* Monthly Payment Grid - 2 Rows */}
         <View className="mb-6">
           <Text className="text-lg font-semibold text-foreground mb-4">Monthly Payments</Text>
@@ -192,8 +196,8 @@ export default function StudentDetailScreen() {
           {/* First Row - Jan to Jun */}
           <View className="flex-row justify-between gap-2 mb-3">
             {firstRow.map((month, index) => {
-              const isPaid = studentPayments.some((p) => p.month === index && p.year === currentYear);
-              const paidDate = studentPayments.find((p) => p.month === index && p.year === currentYear)?.paidDate;
+              const isPaid = studentPayments.some((p) => p.month === index && p.year === selectedYear);
+              const paidDate = studentPayments.find((p) => p.month === index && p.year === selectedYear)?.paidDate;
 
               return (
                 <TouchableOpacity
@@ -254,8 +258,8 @@ export default function StudentDetailScreen() {
           <View className="flex-row justify-between gap-2">
             {secondRow.map((month, index) => {
               const monthIndex = index + 6;
-              const isPaid = studentPayments.some((p) => p.month === monthIndex && p.year === currentYear);
-              const paidDate = studentPayments.find((p) => p.month === monthIndex && p.year === currentYear)?.paidDate;
+              const isPaid = studentPayments.some((p) => p.month === monthIndex && p.year === selectedYear);
+              const paidDate = studentPayments.find((p) => p.month === monthIndex && p.year === selectedYear)?.paidDate;
 
               return (
                 <TouchableOpacity
@@ -323,13 +327,13 @@ export default function StudentDetailScreen() {
             <View className="flex-1">
               <Text className="text-sm text-muted mb-2">Payments This Year</Text>
               <Text className="text-xl font-bold text-foreground">
-                {studentPayments.filter((p) => p.year === currentYear).length}/12
+                {studentPayments.filter((p) => p.year === selectedYear).length}/12
               </Text>
             </View>
           </View>
           <Text className="text-xs text-muted mt-3">
             Total: {CURRENCY_SYMBOL}
-            {studentPayments.filter((p) => p.year === currentYear).reduce((sum, p) => sum + p.amount, 0)}
+            {studentPayments.filter((p) => p.year === selectedYear).reduce((sum, p) => sum + p.amount, 0)}
           </Text>
         </View>
 

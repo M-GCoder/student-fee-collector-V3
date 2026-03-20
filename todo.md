@@ -252,3 +252,15 @@
 - [x] Test monthly due date feature end-to-end
 - [x] Verify monthly recurring dates work correctly
 - [x] Create comprehensive unit tests for monthly due date service
+
+
+## Year Selector Feature (COMPLETED)
+
+- [x] Create year selector component with left/right arrows
+- [x] Add year navigation state management
+- [x] Update student detail screen to display year selector
+- [x] Filter payment data by selected year
+- [x] Store selected year in local state
+- [x] Test year navigation functionality
+- [x] Verify payments display correctly for different years
+- [x] Create unit tests for year selector component (11 tests passing)
