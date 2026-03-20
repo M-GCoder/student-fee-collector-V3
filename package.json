@@ -34,6 +34,7 @@
     "cookie": "^1.1.1",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.7",
+    "exceljs": "^4.4.0",
     "expo": "~54.0.29",
     "expo-audio": "~1.1.0",
     "expo-background-fetch": "^55.0.9",

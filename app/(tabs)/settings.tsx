@@ -9,6 +9,7 @@ import { useColors } from "@/hooks/use-colors";
 import * as storage from "@/lib/storage";
 import { sendBulkUnpaidNotifications } from "@/lib/notification-service";
 import { exportAsXLS, exportAsPDF, exportAsCSV } from "@/lib/export-service";
+import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsCSV } from "@/lib/current-month-export-service";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -32,8 +33,8 @@ export default function SettingsScreen() {
   const handleExportCSV = async () => {
     try {
       setExporting(true);
-      await exportAsCSV(students, payments);
-      Alert.alert("Success", "CSV file exported successfully");
+      await exportCurrentMonthAsCSV(students, payments);
+      Alert.alert("Success", "Current month CSV exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export CSV file");
       console.error(error);
@@ -45,8 +46,8 @@ export default function SettingsScreen() {
   const handleExportXLS = async () => {
     try {
       setExporting(true);
-      await exportAsXLS(students, payments);
-      Alert.alert("Success", "Excel file exported successfully");
+      await exportCurrentMonthAsXLS(students, payments);
+      Alert.alert("Success", "Current month Excel file exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export Excel file");
       console.error(error);
@@ -58,8 +59,8 @@ export default function SettingsScreen() {
   const handleExportPDF = async () => {
     try {
       setExporting(true);
-      await exportAsPDF(students, payments);
-      Alert.alert("Success", "PDF file exported successfully");
+      await exportCurrentMonthAsPDF(students, payments);
+      Alert.alert("Success", "Current month PDF exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export PDF file");
       console.error(error);
