@@ -238,3 +238,17 @@
 - [x] Add splash loader component for graceful loading
 - [x] Disable React Compiler for Android compatibility
 - [x] Add comprehensive error handling to home screen
+
+
+## Monthly Recurring Due Date Feature (COMPLETED)
+
+- [x] Update Student type to include monthlyDueDate field (day of month: 1-31)
+- [x] Create monthly due date calculation service
+- [x] Enhance add-student screen with monthly date picker (day selector)
+- [x] Enhance edit-student screen with monthly date picker
+- [x] Update student detail screen to show monthly due date
+- [x] Update home screen to show monthly payment status
+- [x] Implement overdue calculation for monthly fees
+- [x] Test monthly due date feature end-to-end
+- [x] Verify monthly recurring dates work correctly
+- [x] Create comprehensive unit tests for monthly due date service

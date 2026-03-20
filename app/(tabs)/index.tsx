@@ -7,6 +7,7 @@ import { Payment, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { getPaymentStatus, getDueDateMessage } from "@/lib/due-date-service";
+import { getMonthlyDueStatusMessage, getMonthlyDueStatusColor } from "@/lib/monthly-due-date-service";
 
 import { SplashLoader } from "@/components/splash-loader";
 
@@ -61,18 +62,42 @@ export default function HomeScreen() {
   };
 
   const renderStudentItem = ({ item }: { item: (typeof students)[0] }) => {
-    const status = getPaymentStatus(item, payments);
-    const statusMessage = getDueDateMessage(item, payments);
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const currentMonthPayment = payments.find(
+      (p) => p.studentId === item.id && p.month === currentMonth && p.year === currentYear
+    );
     
+    let statusMessage = getDueDateMessage(item, payments);
     let statusColor = colors.warning;
     let statusIcon = "schedule";
+    let statusLabel = "Pending";
     
-    if (status === "paid") {
-      statusColor = colors.success;
-      statusIcon = "check-circle";
-    } else if (status === "overdue") {
-      statusColor = colors.error;
-      statusIcon = "error";
+    if (item.monthlyDueDate) {
+      statusMessage = getMonthlyDueStatusMessage(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
+      statusColor = getMonthlyDueStatusColor(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
+      
+      if (currentMonthPayment?.paidDate) {
+        statusIcon = "check-circle";
+        statusLabel = "Paid";
+      } else if (statusColor === colors.error) {
+        statusIcon = "error";
+        statusLabel = "Due";
+      } else {
+        statusIcon = "schedule";
+        statusLabel = "Pending";
+      }
+    } else {
+      const status = getPaymentStatus(item, payments);
+      if (status === "paid") {
+        statusColor = colors.success;
+        statusIcon = "check-circle";
+        statusLabel = "Paid";
+      } else if (status === "overdue") {
+        statusColor = colors.error;
+        statusIcon = "error";
+        statusLabel = "Due";
+      }
     }
     return (
       <TouchableOpacity
@@ -95,7 +120,7 @@ export default function HomeScreen() {
               <MaterialIcons name={statusIcon as any} size={20} color="#ffffff" />
             </View>
             <Text className="text-xs text-muted mt-1 text-center" style={{ maxWidth: 50 }}>
-              {status === "paid" ? "Paid" : status === "overdue" ? "Due" : "Pending"}
+              {statusLabel}
             </Text>
           </View>
         </View>

@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from "react-native";
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -18,6 +18,7 @@ export default function AddStudentScreen() {
   const [fee, setFee] = useState("");
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [monthlyDueDate, setMonthlyDueDate] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleAddStudent = async () => {
@@ -41,6 +42,7 @@ export default function AddStudentScreen() {
         class: studentClass.trim(),
         monthlyFee: parseFloat(fee),
         dueDate: dueDate ? dueDate.toISOString() : undefined,
+        monthlyDueDate: monthlyDueDate || undefined,
       });
       Alert.alert("Success", "Student added successfully");
       router.back();
@@ -173,6 +175,48 @@ export default function AddStudentScreen() {
                 style={{ marginTop: 8 }}
               >
                 <Text className="text-xs text-primary">Clear date</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Monthly Due Date Field */}
+          <View>
+            <Text className="text-sm font-semibold text-foreground mb-2">Monthly Payment Due Date (Optional)</Text>
+            <Text className="text-xs text-muted mb-3">Select the day of month when fees are due every month (1-31)</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                <TouchableOpacity
+                  key={day}
+                  onPress={() => setMonthlyDueDate(monthlyDueDate === day ? null : day)}
+                  style={{
+                    width: "22%",
+                    paddingVertical: 10,
+                    paddingHorizontal: 8,
+                    borderRadius: 6,
+                    borderWidth: 1,
+                    borderColor: monthlyDueDate === day ? colors.primary : colors.border,
+                    backgroundColor: monthlyDueDate === day ? colors.primary : colors.surface,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "600",
+                      color: monthlyDueDate === day ? "white" : colors.foreground,
+                    }}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {monthlyDueDate && (
+              <TouchableOpacity
+                onPress={() => setMonthlyDueDate(null)}
+                style={{ marginTop: 8 }}
+              >
+                <Text className="text-xs text-primary">Clear selection</Text>
               </TouchableOpacity>
             )}
           </View>

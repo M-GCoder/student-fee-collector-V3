@@ -7,6 +7,7 @@ import { Student, Payment, MONTH_SHORT, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { getPaymentStatus, getDueDateMessage, formatDueDate } from "@/lib/due-date-service";
+import { getMonthlyDueStatusMessage, getMonthlyDueStatusColor, formatMonthlyDueDate } from "@/lib/monthly-due-date-service";
 
 export default function StudentDetailScreen() {
   const router = useRouter();
@@ -170,9 +171,15 @@ export default function StudentDetailScreen() {
               </View>
             </View>
             {student.dueDate && (
-              <View className="flex-row justify-between items-center">
+              <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-sm text-muted">Due Date</Text>
                 <Text className="text-sm font-semibold text-foreground">{formatDueDate(student.dueDate)}</Text>
+              </View>
+            )}
+            {student.monthlyDueDate && (
+              <View className="flex-row justify-between items-center">
+                <Text className="text-sm text-muted">Monthly Due Date</Text>
+                <Text className="text-sm font-semibold text-foreground">{formatMonthlyDueDate(student.monthlyDueDate)}</Text>
               </View>
             )}
           </View>
