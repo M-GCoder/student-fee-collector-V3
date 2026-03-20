@@ -178,10 +178,30 @@ export async function exportCurrentMonthAsXLS(
     const fileName = `Student_Fees_${monthNames[month]}_${year}.xlsx`;
     const fileUri = `${FileSystem.documentDirectory}${fileName}`;
 
-    const buffer = await workbook.xlsx.writeBuffer();
-    await FileSystem.writeAsStringAsync(fileUri, Buffer.from(buffer).toString('base64'), {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    try {
+      const buffer = await workbook.xlsx.writeBuffer();
+      // Convert buffer to base64 string for file writing
+      let base64String = '';
+      if (typeof buffer === 'string') {
+        base64String = buffer;
+      } else if (buffer instanceof ArrayBuffer) {
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i++) {
+          base64String += String.fromCharCode(bytes[i]);
+        }
+        base64String = btoa(base64String);
+      } else {
+        // For other buffer types, convert to string
+        base64String = String(buffer);
+      }
+      
+      await FileSystem.writeAsStringAsync(fileUri, base64String, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    } catch (bufferError) {
+      console.error('Buffer conversion error:', bufferError);
+      throw new Error('Failed to convert Excel file to base64 format');
+    }
 
     // Share file
     if (await Sharing.isAvailableAsync()) {
