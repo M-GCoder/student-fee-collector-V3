@@ -10,6 +10,7 @@ import * as storage from "@/lib/storage";
 import { sendBulkUnpaidNotifications } from "@/lib/notification-service";
 import { exportAsXLS, exportAsPDF, exportAsCSV } from "@/lib/export-service";
 import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsCSV } from "@/lib/current-month-export-service";
+import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function SettingsScreen() {
   const { students, payments, refreshData } = useStudents();
   const [exporting, setExporting] = useState(false);
   const [sendingNotifications, setSendingNotifications] = useState(false);
+  const [supabaseModalVisible, setSupabaseModalVisible] = useState(false);
 
   // Calculate current month payments
   const currentDate = new Date();
@@ -125,13 +127,27 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        {/* Header */}
-        <View className="mb-6 flex-row items-center">
-          <MaterialIcons name="dashboard" size={28} color={colors.primary} style={{ marginRight: 8 }} />
-          <View className="flex-1">
-            <Text className="text-3xl font-bold text-foreground">Summary</Text>
-            <Text className="text-sm text-muted mt-1">App configuration and data management</Text>
+        {/* Header with 3-dot Menu */}
+        <View className="mb-6 flex-row items-center justify-between">
+          <View className="flex-row items-center flex-1">
+            <MaterialIcons name="dashboard" size={28} color={colors.primary} style={{ marginRight: 8 }} />
+            <View className="flex-1">
+              <Text className="text-3xl font-bold text-foreground">Summary</Text>
+              <Text className="text-sm text-muted mt-1">App configuration and data management</Text>
+            </View>
           </View>
+          <TouchableOpacity
+            onPress={() => setSupabaseModalVisible(true)}
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 8,
+              padding: 8,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            <MaterialIcons name="more-vert" size={24} color={colors.foreground} />
+          </TouchableOpacity>
         </View>
 
         {/* Data Summary */}
@@ -365,6 +381,16 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Supabase Config Modal */}
+      <SupabaseConfigModal
+        visible={supabaseModalVisible}
+        onClose={() => setSupabaseModalVisible(false)}
+        onSyncComplete={() => {
+          setSupabaseModalVisible(false);
+          refreshData();
+        }}
+      />
     </ScreenContainer>
   );
 }
