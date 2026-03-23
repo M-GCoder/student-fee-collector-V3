@@ -303,3 +303,14 @@
 - [x] Create comprehensive tests (13 tests passing)
 - [x] Create setup guide (SUPABASE_SETUP.md)
 - [x] Verify bidirectional sync works correctly
+
+## CSV Import Feature (COMPLETED)
+
+- [x] Create CSV parsing service (csv-import-service.ts) with flexible column handling
+- [x] Update bulk import UI to show CSV option alongside XLS
+- [x] Implement flexible column handling (first 3 columns only, ignores extras)
+- [x] Add comprehensive CSV import tests (27 tests passing)
+- [x] Support quoted values with commas in CSV
+- [x] Verify data validation for numeric monthly fee
+- [x] Handle edge cases (special characters, decimals, whitespace)
+- [x] Generate sample CSV for user reference
