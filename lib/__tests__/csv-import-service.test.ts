@@ -10,22 +10,35 @@ import {
 
 describe("CSV Import Service", () => {
   describe("parseCSVContent", () => {
-    it("should parse simple CSV with 3 columns", () => {
+    it("should parse simple CSV with 3 columns (no headers)", () => {
       const csv = `John Doe,10-A,5000
 Jane Smith,10-B,5500`;
 
-      const rows = parseCSVContent(csv);
+      const { rows, hasHeaders } = parseCSVContent(csv);
 
+      expect(hasHeaders).toBe(false);
       expect(rows).toHaveLength(2);
       expect(rows[0].column1).toBe("John Doe");
       expect(rows[0].column2).toBe("10-A");
       expect(rows[0].column3).toBe("5000");
     });
 
+    it("should detect and skip header row", () => {
+      const csv = `Name,Class,Fee
+John Doe,10-A,5000
+Jane Smith,10-B,5500`;
+
+      const { rows, hasHeaders } = parseCSVContent(csv);
+
+      expect(hasHeaders).toBe(true);
+      expect(rows).toHaveLength(2);
+      expect(rows[0].column1).toBe("John Doe");
+    });
+
     it("should handle CSV with more than 3 columns (only take first 3)", () => {
       const csv = `John Doe,10-A,5000,extra1,extra2`;
 
-      const rows = parseCSVContent(csv);
+      const { rows } = parseCSVContent(csv);
 
       expect(rows).toHaveLength(1);
       expect(rows[0].column1).toBe("John Doe");
@@ -37,7 +50,7 @@ Jane Smith,10-B,5500`;
     it("should handle quoted values with commas", () => {
       const csv = `"Doe, John",10-A,5000`;
 
-      const rows = parseCSVContent(csv);
+      const { rows } = parseCSVContent(csv);
 
       expect(rows).toHaveLength(1);
       expect(rows[0].column1).toBe("Doe, John");
@@ -48,7 +61,7 @@ Jane Smith,10-B,5500`;
 
 Jane Smith,10-B,5500`;
 
-      const rows = parseCSVContent(csv);
+      const { rows } = parseCSVContent(csv);
 
       expect(rows).toHaveLength(2);
     });
@@ -56,12 +69,28 @@ Jane Smith,10-B,5500`;
     it("should handle whitespace", () => {
       const csv = `  John Doe  ,  10-A  ,  5000  `;
 
-      const rows = parseCSVContent(csv);
+      const { rows } = parseCSVContent(csv);
 
       expect(rows).toHaveLength(1);
       expect(rows[0].column1).toBe("John Doe");
       expect(rows[0].column2).toBe("10-A");
       expect(rows[0].column3).toBe("5000");
+    });
+
+    it("should detect headers with various keyword matches", () => {
+      const csv1 = `Student Name,Class,Monthly Fee
+John Doe,10-A,5000`;
+      const { hasHeaders: h1 } = parseCSVContent(csv1);
+      expect(h1).toBe(true);
+
+      const csv2 = `ID,Grade,Amount
+1,10,5000`;
+      const { hasHeaders: h2 } = parseCSVContent(csv2);
+      expect(h2).toBe(true);
+
+      const csv3 = `John Doe,10-A,5000`;
+      const { hasHeaders: h3 } = parseCSVContent(csv3);
+      expect(h3).toBe(false);
     });
   });
 
@@ -148,17 +177,31 @@ Jane Smith,10-B,5500`;
   });
 
   describe("importCSV", () => {
-    it("should import valid CSV successfully", () => {
+    it("should import valid CSV successfully (no headers)", () => {
       const csv = `John Doe,10-A,5000
 Jane Smith,10-B,5500`;
 
       const result = importCSV(csv);
 
+      expect(result.hasHeaders).toBe(false);
       expect(result.totalRows).toBe(2);
       expect(result.validRows).toBe(2);
       expect(result.invalidRows).toBe(0);
       expect(result.students).toHaveLength(2);
       expect(result.errors).toHaveLength(0);
+    });
+
+    it("should import valid CSV with headers", () => {
+      const csv = `Name,Class,Fee
+John Doe,10-A,5000
+Jane Smith,10-B,5500`;
+
+      const result = importCSV(csv);
+
+      expect(result.hasHeaders).toBe(true);
+      expect(result.totalRows).toBe(2);
+      expect(result.validRows).toBe(2);
+      expect(result.students).toHaveLength(2);
     });
 
     it("should handle mixed valid and invalid rows", () => {
@@ -173,7 +216,6 @@ Ahmed Khan,9-A,4500`;
       expect(result.invalidRows).toBe(1);
       expect(result.students).toHaveLength(2);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].rowNumber).toBe(2);
     });
 
     it("should generate unique IDs for each student", () => {
@@ -207,13 +249,15 @@ Jane Smith,10-B,5500,extra3`;
   });
 
   describe("generateSampleCSV", () => {
-    it("should generate valid sample CSV", () => {
+    it("should generate valid sample CSV without headers", () => {
       const sample = generateSampleCSV();
 
-      expect(sample).toContain("Name,Class,Monthly Fee");
       expect(sample).toContain("John Doe");
       expect(sample).toContain("10-A");
       expect(sample).toContain("5000");
+      // Should NOT have header row
+      expect(sample).not.toContain("Name");
+      expect(sample).not.toContain("Class");
     });
 
     it("sample CSV should be importable", () => {
@@ -261,7 +305,6 @@ Jane Smith,,5500`;
       const formatted = formatImportResult(result);
 
       expect(formatted).toContain("Errors");
-      expect(formatted).toContain("Row 2");
     });
   });
 

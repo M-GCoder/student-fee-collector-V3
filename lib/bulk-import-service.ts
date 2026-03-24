@@ -20,10 +20,12 @@ export interface ImportResult {
 
 /**
  * Pick and parse XLS/CSV file for bulk import
+ * Works with files that have or don't have headers
  */
 export async function pickAndParseXLSFile(): Promise<{
   data: Array<Record<string, any>>;
   fileName: string;
+  hasHeaders: boolean;
 } | null> {
   try {
     const result = await DocumentPicker.getDocumentAsync({
@@ -70,16 +72,35 @@ export async function pickAndParseXLSFile(): Promise<{
     const firstSheet = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[firstSheet];
 
-    // Convert to JSON
-    const data = XLSX.utils.sheet_to_json(worksheet);
+    // Get raw data as arrays (no header interpretation)
+    const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
 
-    if (data.length === 0) {
+    if (rawData.length === 0) {
       throw new Error("No data found in the sheet");
     }
 
+    // Detect if first row is headers or data
+    // Headers typically contain text like "Name", "Class", "Fee", etc.
+    // Data rows contain actual student information
+    const firstRow = rawData[0];
+    const hasHeaders = isHeaderRow(firstRow);
+
+    // Convert to array of objects with positional column names
+    const startIndex = hasHeaders ? 1 : 0;
+    const data = rawData.slice(startIndex).map((row) => ({
+      column1: row[0] || "", // Name
+      column2: row[1] || "", // Class
+      column3: row[2] || "", // Monthly Fee
+    }));
+
+    if (data.length === 0) {
+      throw new Error("No data rows found in the sheet");
+    }
+
     return {
-      data: data as Array<Record<string, any>>,
+      data,
       fileName: file.name,
+      hasHeaders,
     };
   } catch (error) {
     console.error("Error picking/parsing XLS file:", error);
@@ -88,7 +109,40 @@ export async function pickAndParseXLSFile(): Promise<{
 }
 
 /**
+ * Detect if a row is a header row
+ * Headers typically contain column names like "Name", "Class", "Fee", etc.
+ */
+function isHeaderRow(row: any[]): boolean {
+  if (!row || row.length < 3) return false;
+
+  const headerKeywords = [
+    "name",
+    "student",
+    "class",
+    "grade",
+    "fee",
+    "payment",
+    "amount",
+    "due",
+    "date",
+    "id",
+    "roll",
+  ];
+
+  // Check if any of the first 3 columns contain header keywords
+  const firstThree = row.slice(0, 3).map((cell) => String(cell).toLowerCase().trim());
+
+  const matchCount = firstThree.filter((cell) =>
+    headerKeywords.some((keyword) => cell.includes(keyword))
+  ).length;
+
+  // If 2 or more columns match header keywords, it's likely a header row
+  return matchCount >= 2;
+}
+
+/**
  * Validate and process imported student data
+ * Works with positional columns (no header matching needed)
  */
 export function validateAndProcessStudents(
   data: Array<Record<string, any>>,
@@ -105,37 +159,23 @@ export function validateAndProcessStudents(
 
   data.forEach((row, index) => {
     try {
-      // Extract and validate fields - try multiple column name variations
-      const name = String(
-        row["Student Name"] ||
-          row["Name"] ||
-          row["name"] ||
-          row["STUDENT NAME"] ||
-          ""
-      ).trim();
-      const className = String(
-        row["Class"] ||
-          row["class"] ||
-          row["CLASS"] ||
-          row["Grade"] ||
-          row["grade"] ||
-          ""
-      ).trim();
-      const monthlyFee = parseFloat(
-        String(row["Monthly Fee"] || row["Fee"] || row["fee"] || row["MONTHLY FEE"] || "0")
-      );
+      // Extract fields from positional columns
+      // Column 1: Name, Column 2: Class, Column 3: Monthly Fee
+      const name = String(row.column1 || "").trim();
+      const className = String(row.column2 || "").trim();
+      const monthlyFee = parseFloat(String(row.column3 || "0"));
 
       // Validation
       if (!name) {
-        throw new Error("Student name is required");
+        throw new Error("Student name is required (Column 1)");
       }
 
       if (!className) {
-        throw new Error("Class is required");
+        throw new Error("Class is required (Column 2)");
       }
 
       if (isNaN(monthlyFee) || monthlyFee <= 0) {
-        throw new Error("Monthly fee must be a positive number");
+        throw new Error("Monthly fee must be a positive number (Column 3)");
       }
 
       // Check for duplicates
@@ -158,13 +198,8 @@ export function validateAndProcessStudents(
     } catch (error) {
       result.failed++;
       result.errors.push({
-        row: index + 2, // +2 because of header and 0-indexing
-        name: String(
-          row["Student Name"] ||
-            row["Name"] ||
-            row["name"] ||
-            "Unknown"
-        ),
+        row: index + 1, // 1-indexed for user display
+        name: String(row.column1 || "Unknown"),
         error: error instanceof Error ? error.message : "Unknown error",
       });
     }
