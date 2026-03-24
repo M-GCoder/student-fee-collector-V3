@@ -1,5 +1,6 @@
 import { ScrollView, View, Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
+import { DragDropFileUpload } from "@/components/drag-drop-file-upload";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -162,6 +163,95 @@ export default function BulkImportScreen() {
     }
   };
 
+  const handleDragDropFile = async (file: File | null) => {
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+      const fileContent = await file.text();
+
+      if (fileExtension === ".csv") {
+        // Parse CSV
+        const csvResult = importCSV(fileContent);
+
+        if (csvResult.validRows === 0 && csvResult.errors.length > 0) {
+          Alert.alert("No Valid Students", formatImportResult(csvResult));
+          setLoading(false);
+          return;
+        }
+
+        setImportData({
+          fileName: file.name,
+          rowCount: csvResult.totalRows,
+        });
+
+        setImportResult({
+          success: csvResult.validRows,
+          failed: csvResult.invalidRows,
+          students: csvResult.students,
+          errors: csvResult.errors.map((err) => ({
+            row: err.rowNumber,
+            name: err.data[0] || "Unknown",
+            error: err.error,
+          })),
+        });
+        setImportType("csv");
+      } else if (fileExtension === ".xlsx" || fileExtension === ".xls") {
+        // Parse XLS
+        const arrayBuffer = await file.arrayBuffer();
+        const XLSX = require("xlsx");
+        const workbook = XLSX.read(arrayBuffer, { type: "array" });
+        const firstSheet = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheet];
+        const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        // Convert to positional columns
+        const startIndex = data.length > 0 && isHeaderRow(data[0]) ? 1 : 0;
+        const rows = data.slice(startIndex).map((row: any) => ({
+          column1: row[0] || "",
+          column2: row[1] || "",
+          column3: row[2] || "",
+        }));
+
+        const validation = validateAndProcessStudents(rows, students);
+        setImportData({
+          fileName: file.name,
+          rowCount: rows.length,
+        });
+        setImportResult(validation);
+        setImportType("xls");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to read file. Please ensure it has the correct format.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isHeaderRow = (row: any[]): boolean => {
+    if (!row || row.length < 3) return false;
+    const headerKeywords = [
+      "name",
+      "student",
+      "class",
+      "grade",
+      "fee",
+      "payment",
+      "amount",
+      "due",
+      "date",
+      "id",
+      "roll",
+    ];
+    const firstThree = row.slice(0, 3).map((cell) => String(cell).toLowerCase().trim());
+    const matchCount = firstThree.filter((cell) =>
+      headerKeywords.some((keyword) => cell.includes(keyword))
+    ).length;
+    return matchCount >= 2;
+  };
+
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -188,6 +278,23 @@ export default function BulkImportScreen() {
                 3. Select the file to preview and validate{"\n"}
                 4. Review errors (if any) and import valid students
               </Text>
+            </View>
+
+            {/* Drag-Drop File Upload */}
+            <View className="mb-6">
+              <DragDropFileUpload
+                onFileSelected={handleDragDropFile}
+                acceptedFormats={[".xlsx", ".xls", ".csv"]}
+                disabled={loading}
+                loading={loading}
+              />
+            </View>
+
+            {/* Divider */}
+            <View className="flex-row items-center mb-6">
+              <View className="flex-1 h-px bg-border" />
+              <Text className="text-xs text-muted px-3">OR</Text>
+              <View className="flex-1 h-px bg-border" />
             </View>
 
             {/* File Selection - XLS */}

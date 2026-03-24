@@ -314,3 +314,12 @@
 - [x] Verify data validation for numeric monthly fee
 - [x] Handle edge cases (special characters, decimals, whitespace)
 - [x] Generate sample CSV for user reference
+
+## Drag-and-Drop File Upload (COMPLETED)
+
+- [x] Create drag-and-drop file upload component (DragDropFileUpload.tsx)
+- [x] Integrate into bulk import screen
+- [x] Handle file validation for dropped files (XLS, CSV)
+- [x] Add visual feedback during drag-over state (color change, cursor)
+- [x] Test with XLS and CSV files (153 tests passing)
+- [x] Support both web (drag-drop) and mobile (file picker) platforms
