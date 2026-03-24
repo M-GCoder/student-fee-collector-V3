@@ -41,12 +41,16 @@ export default function DashboardScreen() {
     };
   }).reverse();
 
-  // Outstanding fees
+  // Outstanding fees - Current month only
   const outstandingByStudent = students.map((student) => {
+    // Check if student paid for current month
+    const currentMonthPayment = payments.find(
+      (p) => p.studentId === student.id && p.month === currentMonth && p.year === currentYear
+    );
+    
+    // If not paid, outstanding = monthly fee; if paid, outstanding = 0
+    const outstanding = currentMonthPayment ? 0 : student.monthlyFee;
     const studentPayments = payments.filter((p) => p.studentId === student.id);
-    const paidAmount = studentPayments.reduce((sum, p) => sum + p.amount, 0);
-    const expectedAmount = student.monthlyFee * 12; // Assuming 12 months
-    const outstanding = Math.max(0, expectedAmount - paidAmount);
 
     return {
       student,

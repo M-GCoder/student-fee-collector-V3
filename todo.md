@@ -334,3 +334,20 @@
 - [x] Add tests for fee update logic
 - [x] Test end-to-end duplicate handling
 - [x] Support both overwrite and skip actions for each duplicate
+
+## Dashboard Outstanding Fees Fix (COMPLETED)
+
+- [x] Update outstanding fees calculation to show current month only
+- [x] Test outstanding fees display
+- [x] Verify payment status filtering by current month
+
+## Advanced Export Options (COMPLETED)
+
+- [x] Create advanced export dropdown component (AdvancedExportModal)
+- [x] Add month/year selection UI with last 12 months
+- [x] Implement export by selected month/year (flexible-export-service)
+- [x] Default to current month when clicking export directly
+- [x] Integrate into Summary tab with dropdown arrows
+- [x] Test export with different months
+- [x] Support CSV, Excel, and PDF formats
+- [x] Show month/year info in export modal

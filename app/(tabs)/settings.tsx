@@ -10,7 +10,9 @@ import * as storage from "@/lib/storage";
 import { sendBulkUnpaidNotifications } from "@/lib/notification-service";
 import { exportAsXLS, exportAsPDF, exportAsCSV } from "@/lib/export-service";
 import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsCSV } from "@/lib/current-month-export-service";
+import { exportAsCSV as exportAsCSVFlex, exportAsXLS as exportAsXLSFlex, exportAsPDF as exportAsPDFFlex } from "@/lib/flexible-export-service";
 import { SupabaseConfigModal } from "@/components/supabase-config-modal";
+import { AdvancedExportModal, type ExportOptions } from "@/components/advanced-export-modal";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -19,6 +21,8 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [sendingNotifications, setSendingNotifications] = useState(false);
   const [supabaseModalVisible, setSupabaseModalVisible] = useState(false);
+  const [advancedExportVisible, setAdvancedExportVisible] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
 
   // Calculate current month payments
   const currentDate = new Date();
@@ -35,7 +39,8 @@ export default function SettingsScreen() {
   const handleExportCSV = async () => {
     try {
       setExporting(true);
-      await exportCurrentMonthAsCSV(students, payments);
+      const currentDate = new Date();
+      await exportAsCSVFlex(students, payments, currentDate.getMonth(), currentDate.getFullYear());
       Alert.alert("Success", "Current month CSV exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export CSV file");
@@ -48,7 +53,8 @@ export default function SettingsScreen() {
   const handleExportXLS = async () => {
     try {
       setExporting(true);
-      await exportCurrentMonthAsXLS(students, payments);
+      const currentDate = new Date();
+      await exportAsXLSFlex(students, payments, currentDate.getMonth(), currentDate.getFullYear());
       Alert.alert("Success", "Current month Excel file exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export Excel file");
@@ -61,10 +67,34 @@ export default function SettingsScreen() {
   const handleExportPDF = async () => {
     try {
       setExporting(true);
-      await exportCurrentMonthAsPDF(students, payments);
+      const currentDate = new Date();
+      await exportAsPDFFlex(students, payments, currentDate.getMonth(), currentDate.getFullYear());
       Alert.alert("Success", "Current month PDF exported successfully");
     } catch (error) {
       Alert.alert("Error", "Failed to export PDF file");
+      console.error(error);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleAdvancedExport = async (options: ExportOptions) => {
+    if (!options.month || !options.year) return;
+
+    try {
+      setExporting(true);
+      if (options.format === "csv") {
+        await exportAsCSVFlex(students, payments, options.month, options.year);
+      } else if (options.format === "xls") {
+        await exportAsXLSFlex(students, payments, options.month, options.year);
+      } else if (options.format === "pdf") {
+        await exportAsPDFFlex(students, payments, options.month, options.year);
+      }
+      Alert.alert("Success", `${options.format.toUpperCase()} exported successfully`);
+      setAdvancedExportVisible(false);
+      setExportFormat(null);
+    } catch (error) {
+      Alert.alert("Error", "Failed to export file");
       console.error(error);
     } finally {
       setExporting(false);
@@ -314,9 +344,18 @@ export default function SettingsScreen() {
               activeOpacity={0.8}
             >
               <MaterialIcons name="table-chart" size={20} color="#ffffff" />
-              <Text className="text-white font-semibold ml-3">
+              <Text className="text-white font-semibold ml-3 flex-1">
                 {exporting ? "Exporting..." : "Export as CSV"}
               </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setExportFormat("csv");
+                  setAdvancedExportVisible(true);
+                }}
+                disabled={exporting || students.length === 0}
+              >
+                <MaterialIcons name="expand-more" size={20} color="#ffffff" />
+              </TouchableOpacity>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -334,9 +373,18 @@ export default function SettingsScreen() {
               activeOpacity={0.8}
             >
               <MaterialIcons name="description" size={20} color="#ffffff" />
-              <Text className="text-white font-semibold ml-3">
+              <Text className="text-white font-semibold ml-3 flex-1">
                 {exporting ? "Exporting..." : "Export as Excel"}
               </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setExportFormat("xls");
+                  setAdvancedExportVisible(true);
+                }}
+                disabled={exporting || students.length === 0}
+              >
+                <MaterialIcons name="expand-more" size={20} color="#ffffff" />
+              </TouchableOpacity>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -354,9 +402,18 @@ export default function SettingsScreen() {
               activeOpacity={0.8}
             >
               <MaterialIcons name="picture-as-pdf" size={20} color="#ffffff" />
-              <Text className="text-white font-semibold ml-3">
+              <Text className="text-white font-semibold ml-3 flex-1">
                 {exporting ? "Exporting..." : "Export as PDF"}
               </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setExportFormat("pdf");
+                  setAdvancedExportVisible(true);
+                }}
+                disabled={exporting || students.length === 0}
+              >
+                <MaterialIcons name="expand-more" size={20} color="#ffffff" />
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
         </View>
@@ -391,6 +448,20 @@ export default function SettingsScreen() {
           refreshData();
         }}
       />
+
+      {/* Advanced Export Modal */}
+      {exportFormat && (
+        <AdvancedExportModal
+          visible={advancedExportVisible}
+          formats={[exportFormat]}
+          onExport={handleAdvancedExport}
+          onCancel={() => {
+            setAdvancedExportVisible(false);
+            setExportFormat(null);
+          }}
+          loading={exporting}
+        />
+      )}
     </ScreenContainer>
   );
 }
