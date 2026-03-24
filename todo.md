@@ -323,3 +323,14 @@
 - [x] Add visual feedback during drag-over state (color change, cursor)
 - [x] Test with XLS and CSV files (153 tests passing)
 - [x] Support both web (drag-drop) and mobile (file picker) platforms
+
+## Duplicate Detection & Overwrite Feature (COMPLETED)
+
+- [x] Create duplicate detection service (by Name & Class)
+- [x] Create duplicate resolution UI component (DuplicateResolutionModal)
+- [x] Implement fee update logic (keeps payment history, updates future fees)
+- [x] Integrate duplicate handling into bulk import flow
+- [x] Add comprehensive tests for duplicate detection (23 tests)
+- [x] Add tests for fee update logic
+- [x] Test end-to-end duplicate handling
+- [x] Support both overwrite and skip actions for each duplicate
