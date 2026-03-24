@@ -13,6 +13,8 @@ import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsC
 import { exportAsCSV as exportAsCSVFlex, exportAsXLS as exportAsXLSFlex, exportAsPDF as exportAsPDFFlex } from "@/lib/flexible-export-service";
 import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 import { AdvancedExportModal, type ExportOptions } from "@/components/advanced-export-modal";
+import { SyncStatusIndicator } from "@/components/sync-status-indicator";
+import { updateSyncStatus } from "@/lib/sync-status-service";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function SettingsScreen() {
   const [supabaseModalVisible, setSupabaseModalVisible] = useState(false);
   const [advancedExportVisible, setAdvancedExportVisible] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
+  const [syncStatusKey, setSyncStatusKey] = useState(0);
 
   // Calculate current month payments
   const currentDate = new Date();
@@ -157,27 +160,34 @@ export default function SettingsScreen() {
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        {/* Header with 3-dot Menu */}
-        <View className="mb-6 flex-row items-center justify-between">
-          <View className="flex-row items-center flex-1">
-            <MaterialIcons name="dashboard" size={28} color={colors.primary} style={{ marginRight: 8 }} />
-            <View className="flex-1">
-              <Text className="text-3xl font-bold text-foreground">Summary</Text>
-              <Text className="text-sm text-muted mt-1">App configuration and data management</Text>
+        {/* Header with 3-dot Menu and Sync Status */}
+        <View className="mb-6">
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center flex-1">
+              <MaterialIcons name="dashboard" size={28} color={colors.primary} style={{ marginRight: 8 }} />
+              <View className="flex-1">
+                <Text className="text-3xl font-bold text-foreground">Summary</Text>
+                <Text className="text-sm text-muted mt-1">App configuration and data management</Text>
+              </View>
             </View>
+            <TouchableOpacity
+              onPress={() => setSupabaseModalVisible(true)}
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 8,
+                padding: 8,
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}
+            >
+              <MaterialIcons name="more-vert" size={24} color={colors.foreground} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => setSupabaseModalVisible(true)}
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 8,
-              padding: 8,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <MaterialIcons name="more-vert" size={24} color={colors.foreground} />
-          </TouchableOpacity>
+          {/* Sync Status Indicator */}
+          <SyncStatusIndicator
+            key={syncStatusKey}
+            onPress={() => setSyncStatusKey(syncStatusKey + 1)}
+          />
         </View>
 
         {/* Data Summary */}
@@ -443,9 +453,11 @@ export default function SettingsScreen() {
       <SupabaseConfigModal
         visible={supabaseModalVisible}
         onClose={() => setSupabaseModalVisible(false)}
-        onSyncComplete={() => {
+        onSyncComplete={async () => {
           setSupabaseModalVisible(false);
           refreshData();
+          await updateSyncStatus('full');
+          setSyncStatusKey(syncStatusKey + 1);
         }}
       />
 

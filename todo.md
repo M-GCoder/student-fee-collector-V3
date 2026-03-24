@@ -351,3 +351,15 @@
 - [x] Test export with different months
 - [x] Support CSV, Excel, and PDF formats
 - [x] Show month/year info in export modal
+
+## Sync Status Indicator (COMPLETED)
+
+- [x] Create sync status storage service (sync-status-service.ts)
+- [x] Track last sync time and connection status
+- [x] Create sync status indicator component (green/red dot + cloud icon)
+- [x] Display last sync time in human-readable format (e.g., "5 minutes ago")
+- [x] Integrate into Summary tab header below title
+- [x] Update Supabase sync service to log sync events on sync completion
+- [x] Create comprehensive tests (16 new tests passing)
+- [x] Support manual refresh by clicking indicator
+- [x] Show error status when sync fails
