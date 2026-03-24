@@ -13,7 +13,7 @@ export class SupabaseSyncService {
       // Check if tables exist by querying them
       await supabase.from("students").select("id").limit(1);
       await supabase.from("payments").select("id").limit(1);
-      await supabase.from("sync_logs").select("id").limit(1);
+      console.log("Supabase tables initialized successfully");
     } catch (error) {
       console.error("Error initializing Supabase tables:", error);
       throw error;
@@ -46,8 +46,10 @@ export class SupabaseSyncService {
       }
 
       console.log(`Synced ${supabaseStudents.length} students to cloud`);
+      await this.logSyncOperation("completed");
     } catch (error) {
       console.error("Error syncing students to cloud:", error);
+      await this.logSyncOperation("failed", String(error));
       throw error;
     }
   }
@@ -78,8 +80,10 @@ export class SupabaseSyncService {
       }
 
       console.log(`Synced ${supabasePayments.length} payments to cloud`);
+      await this.logSyncOperation("completed");
     } catch (error) {
       console.error("Error syncing payments to cloud:", error);
+      await this.logSyncOperation("failed", String(error));
       throw error;
     }
   }
@@ -186,22 +190,22 @@ export class SupabaseSyncService {
   }
 
   /**
-   * Log sync operation to track sync history
+   * Log sync operation to track sync history (client-side only)
+   * Note: Sync logging is now done locally to avoid database table dependencies
    */
   static async logSyncOperation(
     status: "pending" | "syncing" | "completed" | "failed",
     errorMessage?: string
   ): Promise<void> {
     try {
-      const { error } = await supabase.from("sync_logs").insert({
-        syncStatus: status,
-        lastSyncTime: new Date().toISOString(),
+      // Log to console for debugging
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        status,
         errorMessage: errorMessage || null,
-      });
-
-      if (error) {
-        console.error("Error logging sync operation:", error);
-      }
+      };
+      console.log("Sync operation logged:", logEntry);
+      // In a production app, you could store this in AsyncStorage for local history
     } catch (error) {
       console.error("Error in logSyncOperation:", error);
     }
