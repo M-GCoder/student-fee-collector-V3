@@ -2,7 +2,7 @@ import { ScrollView, Text, View, TouchableOpacity, FlatList, Alert, TextInput } 
 import { ScreenContainer } from "@/components/screen-container";
 import { useStudents } from "@/lib/student-context";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo, useCallback } from "react";
 import { Payment, CURRENCY_SYMBOL } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
@@ -23,8 +23,8 @@ export default function HomeScreen() {
     refreshData();
   }, []);
 
-  // Check if students have paid this month
-  useEffect(() => {
+  // Memoized payment status calculation
+  const studentPaymentStatusMemo = useMemo(() => {
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
@@ -36,32 +36,39 @@ export default function HomeScreen() {
       );
       status[student.id] = paid;
     });
-    setStudentPaymentStatus(status);
+    return status;
   }, [students, payments]);
 
-  // Filter students based on search query
   useEffect(() => {
+    setStudentPaymentStatus(studentPaymentStatusMemo);
+  }, [studentPaymentStatusMemo]);
+
+  // Memoized filtered students to avoid unnecessary recalculations
+  const filteredStudentsMemo = useMemo(() => {
     if (searchQuery.trim() === "") {
-      setFilteredStudents(students);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = students.filter(
-        (student) =>
-          student.name.toLowerCase().includes(query) || student.class.toLowerCase().includes(query)
-      );
-      setFilteredStudents(filtered);
+      return students;
     }
+    const query = searchQuery.toLowerCase();
+    return students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(query) || student.class.toLowerCase().includes(query)
+    );
   }, [searchQuery, students]);
 
-  const handleAddStudent = () => {
+  useEffect(() => {
+    setFilteredStudents(filteredStudentsMemo);
+  }, [filteredStudentsMemo]);
+
+  const handleAddStudent = useCallback(() => {
     router.push("/add-student");
-  };
+  }, [router]);
 
-  const handleStudentPress = (studentId: string) => {
+  const handleStudentPress = useCallback((studentId: string) => {
     router.push(`/student-detail/${studentId}`);
-  };
+  }, [router]);
 
-  const renderStudentItem = ({ item }: { item: (typeof students)[0] }) => {
+  // Memoized StudentItem component to prevent unnecessary re-renders
+  const StudentItem = memo(({ item }: { item: (typeof students)[0] }) => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     const currentMonthPayment = payments.find(
@@ -126,7 +133,13 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  });
+
+  StudentItem.displayName = 'StudentItem';
+
+  const renderStudentItem = useCallback(({ item }: { item: (typeof students)[0] }) => (
+    <StudentItem item={item} />
+  ), [StudentItem]);
 
   if (loading) {
     return <SplashLoader />;
@@ -222,23 +235,25 @@ export default function HomeScreen() {
         )}
 
         {/* Add Student Button */}
-        <TouchableOpacity
-          onPress={handleAddStudent}
-          style={{
-            backgroundColor: colors.primary,
-            borderRadius: 12,
-            paddingVertical: 14,
-            paddingHorizontal: 24,
-            marginTop: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="add" size={24} color="#ffffff" />
-          <Text className="text-white font-semibold ml-2">Add Student</Text>
-        </TouchableOpacity>
+        {!loading && (
+          <TouchableOpacity
+            onPress={handleAddStudent}
+            style={{
+              backgroundColor: colors.primary,
+              borderRadius: 8,
+              paddingVertical: 16,
+              paddingHorizontal: 20,
+              marginTop: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="add" size={24} color="#ffffff" />
+            <Text className="text-white font-semibold ml-2">Add Student</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </ScreenContainer>
   );

@@ -63,9 +63,7 @@ export default function DashboardScreen() {
     .sort((a, b) => b.outstanding - a.outstanding)
     .slice(0, 3);
 
-  const topPayers = outstandingByStudent
-    .sort((a, b) => b.paymentCount - a.paymentCount)
-    .slice(0, 3);
+
 
   const totalOutstanding = outstandingByStudent.reduce((sum, s) => sum + s.outstanding, 0);
 
@@ -173,24 +171,7 @@ export default function DashboardScreen() {
           )}
         </View>
 
-        {/* Top Payers */}
-        {topPayers.length > 0 && (
-          <View className="bg-surface rounded-lg p-4 mb-6 border border-border">
-            <Text className="text-sm font-semibold text-foreground mb-3">Top Payers</Text>
-            {topPayers.map((item, idx) => (
-              <View key={idx} className="flex-row justify-between items-center mb-2 pb-2 border-b border-border">
-                <View className="flex-1">
-                  <Text className="text-xs font-semibold text-foreground">{item.student.name}</Text>
-                  <Text className="text-xs text-muted">{item.student.class}</Text>
-                </View>
-                <View className="flex-row items-center gap-1">
-                  <MaterialIcons name="check-circle" size={16} color={colors.success} />
-                  <Text className="text-xs font-bold text-success">{item.paymentCount}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+
 
         {/* Summary Stats */}
         <View className="bg-primary/10 rounded-lg p-4 border border-primary/20">
