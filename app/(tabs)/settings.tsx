@@ -199,8 +199,8 @@ export default function SettingsScreen() {
               <Text className="text-lg font-bold text-foreground">{students.length}</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-xs text-muted mb-1">Total Payments</Text>
-              <Text className="text-lg font-bold text-foreground">{payments.length}</Text>
+              <Text className="text-xs text-muted mb-1">Current Month Payments</Text>
+              <Text className="text-lg font-bold text-foreground">{currentMonthCount}</Text>
             </View>
             <View className="flex-1">
               <Text className="text-xs text-muted mb-1">Unpaid This Month</Text>

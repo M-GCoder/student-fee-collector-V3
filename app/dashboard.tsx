@@ -1,15 +1,17 @@
-import { View, Text, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useRouter } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { useStudents } from "@/lib/student-context";
 import { CURRENCY_SYMBOL } from "@/lib/types";
+import { useState } from "react";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const colors = useColors();
   const { students, payments } = useStudents();
+  const [expandOutstanding, setExpandOutstanding] = useState(false);
 
   // Calculate metrics
   const currentDate = new Date();
@@ -47,7 +49,6 @@ export default function DashboardScreen() {
     const currentMonthPayment = payments.find(
       (p) => p.studentId === student.id && p.month === currentMonth && p.year === currentYear
     );
-    
     // If not paid, outstanding = monthly fee; if paid, outstanding = 0
     const outstanding = currentMonthPayment ? 0 : student.monthlyFee;
     const studentPayments = payments.filter((p) => p.studentId === student.id);
@@ -63,9 +64,10 @@ export default function DashboardScreen() {
     .sort((a, b) => b.outstanding - a.outstanding)
     .slice(0, 3);
 
-
-
   const totalOutstanding = outstandingByStudent.reduce((sum, s) => sum + s.outstanding, 0);
+  
+  // Get all outstanding students for current month (those with outstanding > 0)
+  const allOutstandingStudents = outstandingByStudent.filter((item) => item.outstanding > 0);
 
   return (
     <ScreenContainer className="p-4">
@@ -153,43 +155,47 @@ export default function DashboardScreen() {
             </Text>
           </View>
 
-          {topOutstanding.length > 0 && (
+          {/* Outstanding Students Dropdown */}
+          {allOutstandingStudents.length > 0 && (
             <View>
-              <Text className="text-xs font-semibold text-foreground mb-2">Top Outstanding</Text>
-              {topOutstanding.map((item, idx) => (
-                <View key={idx} className="flex-row justify-between items-center mb-2 pb-2 border-b border-border">
-                  <View className="flex-1">
-                    <Text className="text-xs font-semibold text-foreground">{item.student.name}</Text>
-                    <Text className="text-xs text-muted">{item.student.class}</Text>
-                  </View>
-                  <Text className="text-xs font-bold text-error">
-                    {CURRENCY_SYMBOL}{item.outstanding}
-                  </Text>
+              <TouchableOpacity
+                onPress={() => setExpandOutstanding(!expandOutstanding)}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  backgroundColor: colors.surface,
+                  borderRadius: 6,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <Text className="text-xs font-semibold text-foreground">
+                  Outstanding Students ({allOutstandingStudents.length})
+                </Text>
+                <MaterialIcons
+                  name={expandOutstanding ? "expand-less" : "expand-more"}
+                  size={20}
+                  color={colors.foreground}
+                />
+              </TouchableOpacity>
+
+              {expandOutstanding && (
+                <View className="mt-3">
+                  {allOutstandingStudents.map((item, idx) => (
+                    <View key={idx} className="flex-row justify-between items-center mb-2 pb-2 border-b border-border">
+                      <View className="flex-1">
+                        <Text className="text-xs font-semibold text-foreground">{item.student.name}</Text>
+                        <Text className="text-xs text-muted">{item.student.class}</Text>
+                      </View>
+                    </View>
+                  ))}
                 </View>
-              ))}
+              )}
             </View>
           )}
-        </View>
-
-
-
-        {/* Summary Stats */}
-        <View className="bg-primary/10 rounded-lg p-4 border border-primary/20">
-          <Text className="text-sm font-semibold text-foreground mb-3">Summary</Text>
-          <View className="flex-row justify-between mb-2">
-            <Text className="text-xs text-muted">Total Students</Text>
-            <Text className="text-xs font-bold text-foreground">{students.length}</Text>
-          </View>
-          <View className="flex-row justify-between mb-2">
-            <Text className="text-xs text-muted">Total Payments</Text>
-            <Text className="text-xs font-bold text-foreground">{payments.length}</Text>
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-xs text-muted">Total Collected</Text>
-            <Text className="text-xs font-bold text-success">
-              {CURRENCY_SYMBOL}{payments.reduce((sum, p) => sum + p.amount, 0)}
-            </Text>
-          </View>
         </View>
       </ScrollView>
     </ScreenContainer>
