@@ -1,5 +1,8 @@
 import { Student } from "./types";
-import { v4 as uuidv4 } from "uuid";
+// Simple ID generator that works on web (no crypto dependency)
+function generateId(): string {
+  return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * CSV row interface (flexible, any number of columns)
@@ -236,7 +239,7 @@ export function importCSV(csvContent: string): CSVImportResult {
 
     // Create student object
     const student: Student = {
-      id: `student_${uuidv4()}`,
+      id: `student_${generateId()}`,
       name: parsed.name,
       class: parsed.class,
       monthlyFee: parsed.monthlyFee,
