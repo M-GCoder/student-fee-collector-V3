@@ -29,11 +29,11 @@ export class SupabaseSyncService {
         id: student.id,
         name: student.name,
         class: student.class,
-        monthlyFee: student.monthlyFee,
-        monthlyDueDate: student.monthlyDueDate,
-        dueDate: student.dueDate,
-        createdAt: student.createdAt,
-        updatedAt: new Date().toISOString(),
+        monthly_fee: student.monthlyFee,
+        monthly_due_date: student.monthlyDueDate,
+        due_date: student.dueDate,
+        created_at: student.createdAt,
+        updated_at: new Date().toISOString(),
       }));
 
       // Upsert students (insert or update if exists)
@@ -61,13 +61,13 @@ export class SupabaseSyncService {
     try {
       const supabasePayments: SupabasePayment[] = payments.map((payment) => ({
         id: payment.id,
-        studentId: payment.studentId,
+        student_id: payment.studentId,
         month: payment.month,
         year: payment.year,
-        paymentDate: payment.paidDate,
+        payment_date: payment.paidDate,
         amount: payment.amount,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }));
 
       // Upsert payments (insert or update if exists)
@@ -107,10 +107,10 @@ export class SupabaseSyncService {
         id: row.id,
         name: row.name,
         class: row.class,
-        monthlyFee: row.monthlyFee,
-        monthlyDueDate: row.monthlyDueDate,
-        dueDate: row.dueDate,
-        createdAt: row.createdAt,
+        monthlyFee: row.monthly_fee,
+        monthlyDueDate: row.monthly_due_date,
+        dueDate: row.due_date,
+        createdAt: row.created_at,
       }));
 
       console.log(`Fetched ${students.length} students from cloud`);
@@ -138,10 +138,10 @@ export class SupabaseSyncService {
 
       const payments: Payment[] = data.map((row: any) => ({
         id: row.id,
-        studentId: row.studentId,
+        studentId: row.student_id,
         month: row.month,
         year: row.year,
-        paidDate: row.paymentDate,
+        paidDate: row.payment_date,
         amount: row.amount,
       }));
 

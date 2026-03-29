@@ -16,22 +16,22 @@ export interface SupabaseStudent {
   id: string;
   name: string;
   class: string;
-  monthlyFee: number;
-  monthlyDueDate?: number; // Day of month (1-31)
-  dueDate?: string; // ISO date string
-  createdAt: string;
-  updatedAt: string;
+  monthly_fee: number;
+  monthly_due_date?: number; // Day of month (1-31)
+  due_date?: string; // ISO date string
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SupabasePayment {
   id: string;
-  studentId: string;
+  student_id: string;
   month: number; // 0-11
   year: number;
-  paymentDate: string; // ISO date string
+  payment_date: string; // ISO date string
   amount: number;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SupabaseSync {
