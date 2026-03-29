@@ -20,6 +20,9 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { StudentProvider } from "@/lib/student-context";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { AutoSyncService } from "@/lib/auto-sync-service";
+import { SupabaseSyncService } from "@/lib/supabase-sync-service";
+import { updateSyncStatus } from "@/lib/sync-status-service";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -38,6 +41,26 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+  }, []);
+
+  // Auto-sync on app launch
+  useEffect(() => {
+    const performAutoSync = async () => {
+      try {
+        const isAutoSyncEnabled = await AutoSyncService.isAutoSyncEnabled();
+        if (isAutoSyncEnabled) {
+          console.log("Auto-sync enabled, syncing data from cloud...");
+          await SupabaseSyncService.fetchStudentsFromCloud();
+          await SupabaseSyncService.fetchPaymentsFromCloud();
+          await AutoSyncService.updateLastAutoSyncTime();
+          await updateSyncStatus("full");
+          console.log("Auto-sync completed successfully");
+        }
+      } catch (error) {
+        console.error("Auto-sync failed:", error);
+      }
+    };
+    performAutoSync();
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

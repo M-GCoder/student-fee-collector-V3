@@ -2,8 +2,9 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } fr
 import { ScreenContainer } from "@/components/screen-container";
 import { useStudents } from "@/lib/student-context";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CURRENCY_SYMBOL } from "@/lib/types";
+import { AutoSyncService } from "@/lib/auto-sync-service";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import * as storage from "@/lib/storage";
@@ -26,6 +27,24 @@ export default function SettingsScreen() {
   const [advancedExportVisible, setAdvancedExportVisible] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
   const [syncStatusKey, setSyncStatusKey] = useState(0);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+
+  useEffect(() => {
+    const loadAutoSyncPreference = async () => {
+      const enabled = await AutoSyncService.isAutoSyncEnabled();
+      setAutoSyncEnabled(enabled);
+    };
+    loadAutoSyncPreference();
+  }, []);
+
+  const handleToggleAutoSync = async () => {
+    try {
+      const newState = await AutoSyncService.toggleAutoSync();
+      setAutoSyncEnabled(newState);
+    } catch (error) {
+      console.error("Error toggling auto-sync:", error);
+    }
+  };
 
   // Calculate current month payments
   const currentDate = new Date();
@@ -426,6 +445,51 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Cloud Sync Settings */}
+        <View className="mb-6">
+          <Text className="text-sm font-semibold text-foreground mb-3">Cloud Sync Settings</Text>
+          <TouchableOpacity
+            onPress={handleToggleAutoSync}
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="cloud-sync" size={20} color={colors.primary} />
+            <View className="flex-1 ml-3">
+              <Text className="text-sm font-semibold text-foreground">Auto-Sync on Launch</Text>
+              <Text className="text-xs text-muted mt-1">Automatically sync data when app starts</Text>
+            </View>
+            <View
+              style={{
+                width: 50,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: autoSyncEnabled ? colors.success : colors.border,
+                justifyContent: "center",
+                paddingHorizontal: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: "white",
+                  marginLeft: autoSyncEnabled ? 24 : 0,
+                }}
+              />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Danger Zone */}

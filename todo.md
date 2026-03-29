@@ -387,3 +387,13 @@
 - [x] Replace with simple timestamp-based ID generator
 - [x] Test CSV import with Sample.csv file (14 students parsed successfully)
 - [x] Verify all 197 tests still passing
+
+## Automatic Sync on App Launch (COMPLETED)
+
+- [x] Create auto-sync preference service (AutoSyncService)
+- [x] Add auto-sync toggle to settings screen with visual toggle switch
+- [x] Implement auto-sync on app launch in root layout
+- [x] Add tests for auto-sync feature (18 tests passing)
+- [x] Test end-to-end auto-sync functionality
+- [x] Auto-sync disabled on error to prevent app blocking
+- [x] Last sync time tracking with updateLastAutoSyncTime()
