@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { CURRENCY_SYMBOL } from "@/lib/types";
 import { AutoSyncService } from "@/lib/auto-sync-service";
+import { AutomaticImportService } from "@/lib/automatic-import-service";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import * as storage from "@/lib/storage";
@@ -28,13 +29,16 @@ export default function SettingsScreen() {
   const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
   const [syncStatusKey, setSyncStatusKey] = useState(0);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [autoImportEnabled, setAutoImportEnabled] = useState(false);
 
   useEffect(() => {
-    const loadAutoSyncPreference = async () => {
-      const enabled = await AutoSyncService.isAutoSyncEnabled();
-      setAutoSyncEnabled(enabled);
+    const loadPreferences = async () => {
+      const syncEnabled = await AutoSyncService.isAutoSyncEnabled();
+      setAutoSyncEnabled(syncEnabled);
+      const importEnabled = await AutomaticImportService.isAutoImportEnabled();
+      setAutoImportEnabled(importEnabled);
     };
-    loadAutoSyncPreference();
+    loadPreferences();
   }, []);
 
   const handleToggleAutoSync = async () => {
@@ -43,6 +47,20 @@ export default function SettingsScreen() {
       setAutoSyncEnabled(newState);
     } catch (error) {
       console.error("Error toggling auto-sync:", error);
+    }
+  };
+
+  const handleToggleAutoImport = async () => {
+    try {
+      if (autoImportEnabled) {
+        await AutomaticImportService.disableAutoImport();
+        setAutoImportEnabled(false);
+      } else {
+        await AutomaticImportService.enableAutoImport();
+        setAutoImportEnabled(true);
+      }
+    } catch (error) {
+      console.error("Error toggling auto-import:", error);
     }
   };
 
@@ -491,6 +509,49 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Automatic Import */}
+        <TouchableOpacity
+          onPress={handleToggleAutoImport}
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 8,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            flexDirection: "row",
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: colors.border,
+            marginBottom: 12,
+          }}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="cloud-download" size={20} color={colors.primary} />
+          <View className="flex-1 ml-3">
+            <Text className="text-sm font-semibold text-foreground">Auto-Import from Cloud</Text>
+            <Text className="text-xs text-muted mt-1">Automatically import data synced from other devices</Text>
+          </View>
+          <View
+            style={{
+              width: 50,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: autoImportEnabled ? colors.success : colors.border,
+              justifyContent: "center",
+              paddingHorizontal: 2,
+            }}
+          >
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: "white",
+                marginLeft: autoImportEnabled ? 24 : 0,
+              }}
+            />
+          </View>
+        </TouchableOpacity>
 
         {/* Danger Zone */}
         <View className="mb-6">

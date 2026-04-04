@@ -23,6 +23,8 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { AutoSyncService } from "@/lib/auto-sync-service";
 import { SupabaseSyncService } from "@/lib/supabase-sync-service";
 import { updateSyncStatus } from "@/lib/sync-status-service";
+import { CloudImportService } from "@/lib/cloud-import-service";
+import { AutomaticImportService } from "@/lib/automatic-import-service";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -43,7 +45,7 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
-  // Auto-sync on app launch
+  // Auto-sync on app launch and periodic automatic import
   useEffect(() => {
     const performAutoSync = async () => {
       try {
@@ -61,6 +63,33 @@ export default function RootLayout() {
       }
     };
     performAutoSync();
+  }, []);
+
+  // Periodic automatic import from cloud
+  useEffect(() => {
+    const performPeriodicImport = async () => {
+      try {
+        const isAutoImportEnabled = await AutomaticImportService.isAutoImportEnabled();
+        if (isAutoImportEnabled) {
+          console.log("Auto-import enabled, checking for cloud data changes...");
+          const dataImported = await CloudImportService.checkAndImportCloudData();
+          if (dataImported) {
+            console.log("Cloud data imported successfully");
+            await updateSyncStatus("full");
+          }
+        }
+      } catch (error) {
+        console.error("Periodic auto-import failed:", error);
+      }
+    };
+
+    // Perform initial check
+    performPeriodicImport();
+
+    // Set up periodic checks every 30 seconds
+    const interval = setInterval(performPeriodicImport, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

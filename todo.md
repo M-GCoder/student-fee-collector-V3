@@ -397,3 +397,44 @@
 - [x] Test end-to-end auto-sync functionality
 - [x] Auto-sync disabled on error to prevent app blocking
 - [x] Last sync time tracking with updateLastAutoSyncTime()
+
+## Real-Time Sync on Data Changes (Current)
+
+- [ ] Implement auto-sync on student add
+- [ ] Implement auto-sync on student update
+- [ ] Implement auto-sync on student delete
+- [ ] Implement auto-sync on payment add
+- [ ] Implement auto-sync on payment update
+- [ ] Implement auto-sync on payment delete
+- [ ] Add loading indicators during sync
+- [ ] Handle sync errors gracefully
+
+## Automatic Import from Cloud (Current)
+
+- [ ] Create automatic import service with on/off toggle
+- [ ] Add automatic import toggle to settings screen
+- [ ] Implement periodic cloud data check
+- [ ] Auto-import new/updated data from cloud
+- [ ] Show notification when data imported
+- [ ] Test automatic import functionality
+
+## Real-Time Sync on Data Changes (COMPLETED)
+
+- [x] Implement auto-sync on student add (StudentContext)
+- [x] Implement auto-sync on student update (StudentContext)
+- [x] Implement auto-sync on student delete (StudentContext)
+- [x] Implement auto-sync on payment add (StudentContext)
+- [x] Implement auto-sync on payment delete (StudentContext)
+- [x] Test real-time sync on all CRUD operations
+- [x] Handle sync errors gracefully
+
+## Automatic Import from Cloud (COMPLETED)
+
+- [x] Create automatic import service with on/off toggle (AutomaticImportService)
+- [x] Add automatic import toggle to settings screen
+- [x] Implement periodic cloud data check in root layout (CloudImportService)
+- [x] Auto-import new/updated data from cloud when detected
+- [x] Detect changes between local and cloud data
+- [x] Test automatic import functionality with multi-device simulation
+- [x] Verify both auto-sync and auto-import work together without conflicts
+- [x] Create comprehensive integration test documentation
