@@ -171,29 +171,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleClearData = () => {
-    Alert.alert(
-      "Clear All Data",
-      "Are you sure you want to delete all students and payment records? This action cannot be undone.",
-      [
-        { text: "Cancel", onPress: () => {}, style: "cancel" },
-        {
-          text: "Clear",
-          onPress: async () => {
-            try {
-              await storage.clearAllData();
-              await refreshData();
-              Alert.alert("Success", "All data has been cleared");
-            } catch (error) {
-              Alert.alert("Error", "Failed to clear data");
-            }
-          },
-          style: "destructive",
-        },
-      ]
-    );
-  };
-
   return (
     <ScreenContainer className="p-4">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -552,26 +529,6 @@ export default function SettingsScreen() {
             />
           </View>
         </TouchableOpacity>
-
-        {/* Danger Zone */}
-        <View className="mb-6">
-          <Text className="text-sm font-semibold text-error mb-3">Danger Zone</Text>
-          <TouchableOpacity
-            onPress={handleClearData}
-            style={{
-              backgroundColor: colors.error,
-              borderRadius: 8,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="delete-forever" size={20} color="#ffffff" />
-            <Text className="text-white font-semibold ml-3">Clear All Data</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
 
       {/* Supabase Config Modal */}
