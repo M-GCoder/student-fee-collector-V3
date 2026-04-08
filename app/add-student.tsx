@@ -23,15 +23,15 @@ export default function AddStudentScreen() {
 
   const handleAddStudent = async () => {
     if (!name.trim()) {
-      Alert.alert("Error", "Please enter student name");
+      Alert.alert("Error", "Please enter Student Name");
       return;
     }
     if (!studentClass.trim()) {
-      Alert.alert("Error", "Please enter class/grade");
+      Alert.alert("Error", "Please enter Class/Grade");
       return;
     }
     if (!fee.trim() || isNaN(parseFloat(fee)) || parseFloat(fee) <= 0) {
-      Alert.alert("Error", "Please enter a valid fee amount");
+      Alert.alert("Error", "Please enter a valid Fee amount");
       return;
     }
 
@@ -138,45 +138,6 @@ export default function AddStudentScreen() {
               }}
               editable={!loading}
             />
-          </View>
-
-          {/* Due Date Field */}
-          <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Payment Due Date (Optional)</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              disabled={loading}
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                backgroundColor: colors.surface,
-              }}
-            >
-              <Text style={{ fontSize: 16, color: dueDate ? colors.foreground : colors.muted }}>
-                {dueDate
-                  ? dueDate.toLocaleDateString("en-IN", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "Select due date"}
-              </Text>
-              <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            {dueDate && (
-              <TouchableOpacity
-                onPress={() => setDueDate(null)}
-                style={{ marginTop: 8 }}
-              >
-                <Text className="text-xs text-primary">Clear date</Text>
-              </TouchableOpacity>
-            )}
           </View>
 
           {/* Monthly Due Date Field */}
