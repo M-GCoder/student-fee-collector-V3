@@ -32,6 +32,8 @@ export class SupabaseSyncService {
         monthly_fee: student.monthlyFee,
         monthly_due_date: student.monthlyDueDate,
         due_date: student.dueDate,
+        email: student.email,
+        password: student.password,
         created_at: student.createdAt,
         updated_at: new Date().toISOString(),
       }));
@@ -99,17 +101,15 @@ export class SupabaseSyncService {
         throw error;
       }
 
-      if (!data) {
-        return [];
-      }
-
-      const students: Student[] = data.map((row: any) => ({
+      const students: Student[] = (data || []).map((row) => ({
         id: row.id,
         name: row.name,
         class: row.class,
         monthlyFee: row.monthly_fee,
         monthlyDueDate: row.monthly_due_date,
         dueDate: row.due_date,
+        email: row.email,
+        password: row.password,
         createdAt: row.created_at,
       }));
 

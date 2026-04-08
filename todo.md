@@ -438,3 +438,20 @@
 - [x] Test automatic import functionality with multi-device simulation
 - [x] Verify both auto-sync and auto-import work together without conflicts
 - [x] Create comprehensive integration test documentation
+
+
+## Email and Password Fields (COMPLETED)
+
+- [x] Add email and password fields to Student type
+- [x] Create Drizzle schema for students and payments tables with email/password columns
+- [x] Generate and apply database migrations
+- [x] Add email field to add-student form with validation
+- [x] Add password field to add-student form with show/hide toggle
+- [x] Add email field to edit-student form with validation
+- [x] Add password field to edit-student form with show/hide toggle
+- [x] Update StudentContext to handle email and password in CRUD operations
+- [x] Update SupabaseSyncService to sync email and password fields
+- [x] Create password-utils.ts with hashing, validation, and sanitization
+- [x] Create comprehensive email/password validation tests (19 tests)
+- [x] Verify all tests passing (281 tests total, no regressions)
+- [x] Integrate email/password with cloud sync

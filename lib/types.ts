@@ -8,6 +8,8 @@ export interface Student {
   monthlyFee: number;
   dueDate?: string; // ISO date string (optional, for single payment deadline)
   monthlyDueDate?: number; // Day of month (1-31) for recurring monthly payment due date
+  email?: string; // Student email address
+  password?: string; // Student password (hashed in database)
   createdAt: string;
 }
 

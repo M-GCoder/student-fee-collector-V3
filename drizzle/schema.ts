@@ -25,4 +25,39 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * Students table for fee collection app
+ * Stores student information including email and password for authentication
+ */
+export const students = mysqlTable("students", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  class: varchar("class", { length: 50 }).notNull(),
+  monthlyFee: int("monthlyFee").notNull(),
+  monthlyDueDate: int("monthlyDueDate"), // Day of month (1-31)
+  dueDate: varchar("dueDate", { length: 50 }), // ISO date string
+  email: varchar("email", { length: 320 }),
+  password: text("password"), // Hashed password
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type StudentDB = typeof students.$inferSelect;
+export type InsertStudentDB = typeof students.$inferInsert;
+
+/**
+ * Payments table for tracking student fee payments
+ */
+export const payments = mysqlTable("payments", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  studentId: varchar("studentId", { length: 64 }).notNull(),
+  month: int("month").notNull(), // 0-11 (Jan-Dec)
+  year: int("year").notNull(),
+  paidDate: varchar("paidDate", { length: 50 }).notNull(), // ISO date string
+  amount: int("amount").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PaymentDB = typeof payments.$inferSelect;
+export type InsertPaymentDB = typeof payments.$inferInsert;
