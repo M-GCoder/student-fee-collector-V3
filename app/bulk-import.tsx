@@ -12,8 +12,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import {
   pickAndParseXLSFile,
   validateAndProcessStudents,
-  formatImportErrors,
-  downloadSampleTemplate,
+  generateSampleTemplate,
 } from "@/lib/bulk-import-service";
 
 import {
@@ -248,7 +247,7 @@ export default function BulkImportScreen() {
   const handleDownloadTemplate = async () => {
     try {
       setLoading(true);
-      await downloadSampleTemplate();
+      await generateSampleTemplate();
       Alert.alert("Success", "Sample template downloaded successfully!");
     } catch (error) {
       Alert.alert("Error", "Failed to download template");

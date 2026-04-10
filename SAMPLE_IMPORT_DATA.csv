@@ -1,0 +1,9 @@
+Name,Class,Amount,Monthly Due Date (1-30),Email,Password
+John Doe,10-A,5000,15,john.doe@example.com,password123
+Jane Smith,10-B,5500,20,jane.smith@example.com,password456
+Bob Johnson,9-A,4500,10,bob.johnson@example.com,password789
+Alice Brown,9-B,5000,25,alice.brown@example.com,password101
+Charlie Wilson,8-A,4000,5,charlie.wilson@example.com,password202
+Diana Lee,8-B,4500,18,diana.lee@example.com,password303
+Edward Martinez,7-A,3500,12,edward.martinez@example.com,password404
+Fiona Garcia,7-B,4000,22,fiona.garcia@example.com,password505
