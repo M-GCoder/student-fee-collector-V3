@@ -50,21 +50,39 @@ export async function pickAndParseXLSFile(): Promise<{
       throw new Error(`Invalid file format. Supported formats: ${validExtensions.join(", ")}`);
     }
 
-    // Read file as base64
-    const response = await fetch(file.uri);
-    if (!response.ok) {
-      throw new Error(`Failed to read file: ${response.statusText}`);
+    // Read file as base64 (React Native compatible)
+    let fileData: any;
+    
+    try {
+      // Try reading from file URI directly using FileSystem
+      const base64Data = await FileSystem.readAsStringAsync(file.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      
+      // Parse base64 data
+      fileData = base64Data;
+    } catch (fsError) {
+      // Fallback: try fetch method with arrayBuffer
+      try {
+        const response = await fetch(file.uri);
+        if (!response.ok) {
+          throw new Error(`Failed to read file: ${response.statusText}`);
+        }
+
+        // Use text() instead of arrayBuffer() for React Native compatibility
+        const text = await response.text();
+        fileData = text;
+      } catch (fetchError) {
+        throw new Error(`Failed to read file: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`);
+      }
     }
 
-    const blob = await response.blob();
-    if (blob.size === 0) {
-      throw new Error("File is empty");
+    if (!fileData) {
+      throw new Error("File is empty or could not be read");
     }
 
-    const arrayBuffer = await blob.arrayBuffer();
-
-    // Parse workbook
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    // Parse workbook - handle both base64 string and text
+    const workbook = XLSX.read(fileData, { type: typeof fileData === 'string' ? "base64" : "binary" });
     if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
       throw new Error("No sheets found in the file");
     }
