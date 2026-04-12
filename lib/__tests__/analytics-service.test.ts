@@ -13,8 +13,6 @@ describe("Analytics Service", () => {
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-
-
   const mockStudents: Student[] = [
     {
       id: "1",

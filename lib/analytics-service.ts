@@ -29,19 +29,17 @@ export function calculateClassAnalytics(
   students: Student[],
   payments: Payment[]
 ): AnalyticsData {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-
-  // Filter payments for current month once
+  // Filter payments for current month
   const currentMonthPayments = payments.filter(
     (p) => p.month === currentMonth && p.year === currentYear
   );
 
   // Group students by class
   const classesByName = new Map<string, Student[]>();
-  
   students.forEach((student) => {
     if (!classesByName.has(student.class)) {
       classesByName.set(student.class, []);
@@ -51,21 +49,20 @@ export function calculateClassAnalytics(
 
   // Calculate analytics for each class
   const classAnalytics: ClassAnalytics[] = [];
+
   classesByName.forEach((classStudents, className) => {
     const totalStudents = classStudents.length;
-    const totalFeeAmount = classStudents.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
+    const totalFeeAmount = classStudents.reduce((sum, s) => sum + s.monthlyFee, 0);
 
-    // Filter payments for this class
-    const classStudentIds = new Set(classStudents.map((s) => s.id));
     const classPayments = currentMonthPayments.filter((p) =>
-      classStudentIds.has(p.studentId)
+      classStudents.some((s) => s.id === p.studentId)
     );
 
-    const collectedAmount = classPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const collectedAmount = classPayments.reduce((sum, p) => sum + p.amount, 0);
     const outstandingAmount = totalFeeAmount - collectedAmount;
     const paidStudents = classPayments.length;
     const pendingStudents = totalStudents - paidStudents;
-    const collectionRate = totalStudents > 0 ? Math.round((paidStudents / totalStudents) * 100 * 10) / 10 : 0;
+    const collectionRate = totalStudents > 0 ? (paidStudents / totalStudents) * 100 : 0;
 
     classAnalytics.push({
       className,
@@ -84,25 +81,27 @@ export function calculateClassAnalytics(
 
   // Calculate overall statistics
   const totalStudents = students.length;
-  const totalFeeAmount = students.reduce((sum, s) => sum + (s.monthlyFee || 0), 0);
-  const totalCollectedAmount = currentMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalFeeAmount = students.reduce((sum, s) => sum + s.monthlyFee, 0);
+  const totalCollectedAmount = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
   const totalOutstandingAmount = totalFeeAmount - totalCollectedAmount;
-  const overallCollectionRate = totalStudents > 0 ? Math.round((currentMonthPayments.length / totalStudents) * 100 * 10) / 10 : 0;
+  const overallCollectionRate = totalStudents > 0 ? (currentMonthPayments.length / totalStudents) * 100 : 0;
 
   // Find top and lowest performing classes
-  const topPerformingClass = classAnalytics.length > 0
-    ? classAnalytics.reduce((max, current) =>
-        current.collectionRate > max.collectionRate ? current : max
-      )
-    : null;
+  const topPerformingClass =
+    classAnalytics.length > 0
+      ? classAnalytics.reduce((max, current) =>
+          current.collectionRate > max.collectionRate ? current : max
+        )
+      : null;
 
-  const lowestPerformingClass = classAnalytics.length > 0
-    ? classAnalytics.reduce((min, current) =>
-        current.collectionRate < min.collectionRate ? current : min
-      )
-    : null;
+  const lowestPerformingClass =
+    classAnalytics.length > 0
+      ? classAnalytics.reduce((min, current) =>
+          current.collectionRate < min.collectionRate ? current : min
+        )
+      : null;
 
-  const result: AnalyticsData = {
+  return {
     classes: classAnalytics,
     totalStudents,
     totalFeeAmount,
@@ -112,8 +111,6 @@ export function calculateClassAnalytics(
     topPerformingClass,
     lowestPerformingClass,
   };
-
-  return result;
 }
 
 /**

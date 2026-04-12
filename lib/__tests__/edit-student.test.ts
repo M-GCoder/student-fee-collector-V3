@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import * as storage from "../storage-safe";
+import * as storage from "../storage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Student } from "../types";
 

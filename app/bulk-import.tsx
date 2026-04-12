@@ -12,9 +12,10 @@ import * as FileSystem from "expo-file-system/legacy";
 import {
   pickAndParseXLSFile,
   validateAndProcessStudents,
-  generateSampleTemplate,
+  formatImportErrors,
+  downloadSampleTemplate,
 } from "@/lib/bulk-import-service";
-
+import { importCSV, formatImportResult } from "@/lib/csv-import-service";
 import {
   detectDuplicates,
   processDuplicateResolution,
@@ -63,16 +64,16 @@ export default function BulkImportScreen() {
   const handleSelectCSVFile = async () => {
     try {
       setLoading(true);
-      const pickerResult = await DocumentPicker.getDocumentAsync({
+      const result = await DocumentPicker.getDocumentAsync({
         type: "text/csv",
         copyToCacheDirectory: true,
       });
 
-      if (pickerResult.canceled) {
+      if (result.canceled) {
         return;
       }
 
-      const asset = pickerResult.assets[0];
+      const asset = result.assets[0];
       const fileUri = asset.uri;
 
       // Read file content
@@ -80,38 +81,33 @@ export default function BulkImportScreen() {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
-      // Parse file using bulk-import-service
-      const response = await fetch(fileUri);
-      if (!response.ok) {
-        throw new Error("Failed to read file");
-      }
-      const blob = await response.blob();
-      const arrayBuffer = await blob.arrayBuffer();
-      const XLSX = require("xlsx");
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const firstSheet = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[firstSheet];
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      // Parse CSV
+      const csvResult = importCSV(fileContent);
 
-      if (rawData.length === 0) {
-        Alert.alert("Error", "No data found in the file");
+      // Check if we have valid students
+      if (csvResult.validRows === 0 && csvResult.errors.length > 0) {
+        Alert.alert("No Valid Students", formatImportResult(csvResult));
         setLoading(false);
         return;
       }
 
-      const processedData = rawData.map((row: any[]) => ({
-        column1: row[0] || "",
-        column2: row[1] || "",
-        column3: row[2] || "",
-      }));
-
-      const importResult = validateAndProcessStudents(processedData, students);
       setImportData({
         fileName: asset.name,
-        rowCount: processedData.length,
+        rowCount: csvResult.totalRows,
       });
-      setImportResult(importResult);
-      setImportType("xls");
+
+      // Format result to match XLS result structure
+      setImportResult({
+        success: csvResult.validRows,
+        failed: csvResult.invalidRows,
+        students: csvResult.students,
+        errors: csvResult.errors.map((err) => ({
+          row: err.rowNumber,
+          name: err.data[0] || "Unknown",
+          error: err.error,
+        })),
+      });
+      setImportType("csv");
     } catch (error) {
       Alert.alert("Error", "Failed to read CSV file. Please ensure it has columns: Name, Class, Monthly Fee");
       console.error(error);
@@ -247,7 +243,7 @@ export default function BulkImportScreen() {
   const handleDownloadTemplate = async () => {
     try {
       setLoading(true);
-      await generateSampleTemplate();
+      await downloadSampleTemplate();
       Alert.alert("Success", "Sample template downloaded successfully!");
     } catch (error) {
       Alert.alert("Error", "Failed to download template");
@@ -265,7 +261,33 @@ export default function BulkImportScreen() {
       const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
       const fileContent = await file.text();
 
-      if (fileExtension === ".xlsx" || fileExtension === ".xls" || fileExtension === ".csv") {
+      if (fileExtension === ".csv") {
+        // Parse CSV
+        const csvResult = importCSV(fileContent);
+
+        if (csvResult.validRows === 0 && csvResult.errors.length > 0) {
+          Alert.alert("No Valid Students", formatImportResult(csvResult));
+          setLoading(false);
+          return;
+        }
+
+        setImportData({
+          fileName: file.name,
+          rowCount: csvResult.totalRows,
+        });
+
+        setImportResult({
+          success: csvResult.validRows,
+          failed: csvResult.invalidRows,
+          students: csvResult.students,
+          errors: csvResult.errors.map((err) => ({
+            row: err.rowNumber,
+            name: err.data[0] || "Unknown",
+            error: err.error,
+          })),
+        });
+        setImportType("csv");
+      } else if (fileExtension === ".xlsx" || fileExtension === ".xls") {
         // Parse XLS
         const arrayBuffer = await file.arrayBuffer();
         const XLSX = require("xlsx");
