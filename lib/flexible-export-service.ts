@@ -122,7 +122,25 @@ export async function exportAsXLS(
   const fileUri = FileSystem.documentDirectory + fileName;
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const base64 = Buffer.from(buffer).toString('base64');
+  // Convert buffer to base64 using native API
+  let base64: string;
+  try {
+    // Try using Buffer if available (Node.js environment)
+    if (typeof Buffer !== 'undefined') {
+      base64 = Buffer.from(buffer).toString('base64');
+    } else {
+      // Fallback: convert ArrayBuffer to base64 using btoa
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      base64 = btoa(binary);
+    }
+  } catch (error) {
+    console.error('Failed to convert buffer to base64:', error);
+    throw new Error('Failed to export Excel file');
+  }
 
   await FileSystem.writeAsStringAsync(fileUri, base64, {
     encoding: FileSystem.EncodingType.Base64,
@@ -198,7 +216,18 @@ export async function exportAsPDF(
 
   // For PDF generation, we'll use a simple approach
   // In production, you might want to use a library like react-native-html-to-pdf
-  const base64Content = Buffer.from(htmlContent).toString('base64');
+  // Convert HTML content to base64 using native API
+  let base64Content: string;
+  try {
+    if (typeof Buffer !== 'undefined') {
+      base64Content = Buffer.from(htmlContent).toString('base64');
+    } else {
+      base64Content = btoa(htmlContent);
+    }
+  } catch (error) {
+    console.error('Failed to convert HTML to base64:', error);
+    throw new Error('Failed to export PDF');
+  }
 
   await FileSystem.writeAsStringAsync(fileUri, base64Content, {
     encoding: FileSystem.EncodingType.Base64,

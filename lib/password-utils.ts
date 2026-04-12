@@ -16,11 +16,13 @@ export function hashPassword(password: string): string {
   const combined = password + salt;
   
   // Convert to base64 as a simple hash representation
+  // Use btoa (native browser/RN API) instead of Buffer for compatibility
   try {
-    return Buffer.from(combined).toString("base64");
-  } catch (error) {
-    // Fallback for environments without Buffer
     return btoa(combined);
+  } catch (error) {
+    // If btoa fails, return the combined string as fallback
+    console.warn("Failed to hash password:", error);
+    return combined;
   }
 }
 

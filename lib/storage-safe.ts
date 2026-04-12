@@ -8,30 +8,46 @@ const CURRENT_VERSION = "1";
 
 let isInitialized = false;
 let initializationError: Error | null = null;
+let initPromise: Promise<void> | null = null;
 
 /**
- * Initialize storage with error handling
- * This should be called once at app startup
+ * Initialize storage with error handling and re-entrancy protection
+ * Uses a lock to prevent concurrent initialization attempts
  */
 export async function initializeStorage(): Promise<void> {
-  if (isInitialized) return;
-
-  try {
-    // Test AsyncStorage availability
-    await AsyncStorage.getItem(STORAGE_VERSION_KEY);
-    
-    // Set version if not exists
-    const version = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
-    if (!version) {
-      await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
-    }
-    
-    isInitialized = true;
-  } catch (error) {
-    initializationError = error instanceof Error ? error : new Error("Unknown storage error");
-    console.error("Storage initialization failed:", initializationError);
-    // Don't throw - allow app to continue with empty data
+  // Return existing promise if initialization is in progress
+  if (initPromise) {
+    return initPromise;
   }
+
+  // Return immediately if already initialized
+  if (isInitialized) {
+    return;
+  }
+
+  // Create initialization promise and store it
+  initPromise = (async () => {
+    try {
+      // Test AsyncStorage availability
+      const version = await AsyncStorage.getItem(STORAGE_VERSION_KEY);
+      if (!version) {
+        await AsyncStorage.setItem(STORAGE_VERSION_KEY, CURRENT_VERSION);
+      }
+      
+      isInitialized = true;
+      initializationError = null;
+    } catch (error) {
+      initializationError = error instanceof Error ? error : new Error("Unknown storage error");
+      console.error("Storage initialization failed:", initializationError);
+      // Mark as initialized even on error to prevent retry loops
+      isInitialized = true;
+    } finally {
+      // Clear the promise after initialization completes
+      initPromise = null;
+    }
+  })();
+
+  return initPromise;
 }
 
 /**
@@ -39,8 +55,11 @@ export async function initializeStorage(): Promise<void> {
  */
 export async function getStudents(): Promise<Student[]> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
+    await initializeStorage();
+    
+    if (initializationError) {
+      console.warn("Storage not available, returning empty array");
+      return [];
     }
     
     const data = await AsyncStorage.getItem(STUDENTS_KEY);
@@ -49,68 +68,8 @@ export async function getStudents(): Promise<Student[]> {
     const parsed = JSON.parse(data);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error("Error getting students:", error);
+    console.error("Error reading students:", error);
     return [];
-  }
-}
-
-/**
- * Save a new student with error handling
- */
-export async function saveStudent(student: Student): Promise<void> {
-  try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
-    const students = await getStudents();
-    students.push(student);
-    await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
-  } catch (error) {
-    console.error("Error saving student:", error);
-    throw error;
-  }
-}
-
-/**
- * Update an existing student with error handling
- */
-export async function updateStudent(student: Student): Promise<void> {
-  try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
-    const students = await getStudents();
-    const index = students.findIndex((s) => s.id === student.id);
-    if (index !== -1) {
-      students[index] = student;
-      await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
-    }
-  } catch (error) {
-    console.error("Error updating student:", error);
-    throw error;
-  }
-}
-
-/**
- * Delete a student with error handling
- */
-export async function deleteStudent(studentId: string): Promise<void> {
-  try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
-    const students = await getStudents();
-    const filtered = students.filter((s) => s.id !== studentId);
-    await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
-    
-    // Also delete all payments for this student
-    await deletePaymentsByStudent(studentId);
-  } catch (error) {
-    console.error("Error deleting student:", error);
-    throw error;
   }
 }
 
@@ -119,8 +78,11 @@ export async function deleteStudent(studentId: string): Promise<void> {
  */
 export async function getPayments(): Promise<Payment[]> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
+    await initializeStorage();
+    
+    if (initializationError) {
+      console.warn("Storage not available, returning empty array");
+      return [];
     }
     
     const data = await AsyncStorage.getItem(PAYMENTS_KEY);
@@ -129,22 +91,96 @@ export async function getPayments(): Promise<Payment[]> {
     const parsed = JSON.parse(data);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
-    console.error("Error getting payments:", error);
+    console.error("Error reading payments:", error);
     return [];
   }
 }
 
 /**
- * Save a payment with error handling
+ * Save a single student to storage
+ */
+export async function saveStudent(student: Student): Promise<void> {
+  try {
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
+    }
+    
+    const students = await getStudents();
+    const index = students.findIndex((s) => s.id === student.id);
+    
+    if (index >= 0) {
+      students[index] = student;
+    } else {
+      students.push(student);
+    }
+    
+    await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  } catch (error) {
+    console.error("Error saving student:", error);
+    throw error;
+  }
+}
+
+/**
+ * Save multiple students to storage
+ */
+export async function saveStudents(students: Student[]): Promise<void> {
+  try {
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
+    }
+    
+    await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+  } catch (error) {
+    console.error("Error saving students:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a student from storage
+ */
+export async function deleteStudent(studentId: string | number): Promise<void> {
+  try {
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
+    }
+    
+    const students = await getStudents();
+    const filtered = students.filter((s) => s.id !== studentId);
+    await AsyncStorage.setItem(STUDENTS_KEY, JSON.stringify(filtered));
+  } catch (error) {
+    console.error("Error deleting student:", error);
+    throw error;
+  }
+}
+
+/**
+ * Save a single payment to storage
  */
 export async function savePayment(payment: Payment): Promise<void> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
     }
     
     const payments = await getPayments();
-    payments.push(payment);
+    const index = payments.findIndex((p) => p.id === payment.id);
+    
+    if (index >= 0) {
+      payments[index] = payment;
+    } else {
+      payments.push(payment);
+    }
+    
     await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments));
   } catch (error) {
     console.error("Error saving payment:", error);
@@ -153,12 +189,32 @@ export async function savePayment(payment: Payment): Promise<void> {
 }
 
 /**
- * Delete a payment with error handling
+ * Save multiple payments to storage
  */
-export async function deletePayment(paymentId: string): Promise<void> {
+export async function savePayments(payments: Payment[]): Promise<void> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
+    }
+    
+    await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(payments));
+  } catch (error) {
+    console.error("Error saving payments:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a payment from storage
+ */
+export async function deletePayment(paymentId: string | number): Promise<void> {
+  try {
+    await initializeStorage();
+    
+    if (initializationError) {
+      throw new Error("Storage not available");
     }
     
     const payments = await getPayments();
@@ -171,45 +227,50 @@ export async function deletePayment(paymentId: string): Promise<void> {
 }
 
 /**
- * Delete all payments for a student
+ * Get students with their payments
  */
-export async function deletePaymentsByStudent(studentId: string): Promise<void> {
+export async function getStudentsWithPayments(): Promise<StudentWithPayments[]> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
+    await initializeStorage();
+    
+    if (initializationError) {
+      console.warn("Storage not available, returning empty array");
+      return [];
     }
     
+    const students = await getStudents();
     const payments = await getPayments();
-    const filtered = payments.filter((p) => p.studentId !== studentId);
-    await AsyncStorage.setItem(PAYMENTS_KEY, JSON.stringify(filtered));
+    
+    return students.map((student) => ({
+      ...student,
+      payments: payments.filter((p) => p.studentId === student.id),
+    }));
   } catch (error) {
-    console.error("Error deleting payments by student:", error);
-    throw error;
+    console.error("Error getting students with payments:", error);
+    return [];
   }
 }
 
 /**
- * Get student with payments
+ * Update a student in storage
  */
-export async function getStudentWithPayments(
-  studentId: string
-): Promise<StudentWithPayments | null> {
+export async function updateStudent(student: Student): Promise<void> {
+  return saveStudent(student);
+}
+
+/**
+ * Get a single student with their payments
+ */
+export async function getStudentWithPayments(studentId: string): Promise<StudentWithPayments | null> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
     const students = await getStudents();
     const student = students.find((s) => s.id === studentId);
-    
     if (!student) return null;
     
     const payments = await getPayments();
-    const studentPayments = payments.filter((p) => p.studentId === studentId);
-    
     return {
       ...student,
-      payments: studentPayments,
+      payments: payments.filter((p) => p.studentId === studentId),
     };
   } catch (error) {
     console.error("Error getting student with payments:", error);
@@ -218,7 +279,7 @@ export async function getStudentWithPayments(
 }
 
 /**
- * Get payment for specific month
+ * Get payment for a specific month and year
  */
 export async function getPaymentForMonth(
   studentId: string,
@@ -226,10 +287,6 @@ export async function getPaymentForMonth(
   year: number
 ): Promise<Payment | undefined> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
     const payments = await getPayments();
     return payments.find(
       (p) => p.studentId === studentId && p.month === month && p.year === year
@@ -245,10 +302,6 @@ export async function getPaymentForMonth(
  */
 export async function getStudentPayments(studentId: string): Promise<Payment[]> {
   try {
-    if (!isInitialized) {
-      await initializeStorage();
-    }
-    
     const payments = await getPayments();
     return payments.filter((p) => p.studentId === studentId);
   } catch (error) {
@@ -258,27 +311,15 @@ export async function getStudentPayments(studentId: string): Promise<Payment[]> 
 }
 
 /**
- * Clear all data (for testing or reset)
+ * Clear all storage (for testing or reset)
  */
-export async function clearAllData(): Promise<void> {
+export async function clearStorage(): Promise<void> {
   try {
-    await AsyncStorage.multiRemove([STUDENTS_KEY, PAYMENTS_KEY]);
+    await AsyncStorage.multiRemove([STUDENTS_KEY, PAYMENTS_KEY, STORAGE_VERSION_KEY]);
+    isInitialized = false;
+    initializationError = null;
   } catch (error) {
-    console.error("Error clearing data:", error);
+    console.error("Error clearing storage:", error);
     throw error;
   }
-}
-
-/**
- * Check if storage is available
- */
-export function isStorageAvailable(): boolean {
-  return isInitialized && !initializationError;
-}
-
-/**
- * Get storage initialization error if any
- */
-export function getStorageError(): Error | null {
-  return initializationError;
 }
