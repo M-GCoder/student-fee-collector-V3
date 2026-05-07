@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Dimensions } from "react-native";
-import Svg, { Circle, Text as SvgText, Path } from "react-native-svg";
+import Svg, { Text as SvgText, Path } from "react-native-svg";
 import { useColors } from "@/hooks/use-colors";
 import { ClassAnalytics } from "@/lib/analytics-service";
 
