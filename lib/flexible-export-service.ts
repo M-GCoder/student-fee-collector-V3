@@ -1,5 +1,5 @@
 import { Student, Payment, CURRENCY_SYMBOL } from './types';
-import { Workbook } from 'exceljs';
+
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -80,77 +80,7 @@ export async function exportAsCSV(
   });
 }
 
-/**
- * Export as Excel for selected month/year
- */
-export async function exportAsXLS(
-  students: Student[],
-  payments: Payment[],
-  month: number,
-  year: number
-): Promise<void> {
-  const data = prepareExportData(students, payments, month, year);
-  const monthName = new Date(year, month, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
-  const workbook = new Workbook();
-  const worksheet = workbook.addWorksheet('Fees');
-
-  // Add header
-  const headerRow = worksheet.addRow(['Name', 'Class', 'Fee', 'Payment Date']);
-  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0A7EA4' } };
-  headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-  // Add data rows
-  data.forEach((row) => {
-    const dataRow = worksheet.addRow([row.name, row.class, row.fee, row.paymentDate]);
-    dataRow.alignment = { horizontal: 'left', vertical: 'middle' };
-    if (row.paymentDate === 'Pending') {
-      dataRow.font = { color: { argb: 'FFEF4444' } };
-    }
-  });
-
-  // Adjust column widths
-  worksheet.columns = [
-    { width: 20 },
-    { width: 15 },
-    { width: 12 },
-    { width: 15 },
-  ];
-
-  const fileName = `student-fees-${monthName.replace(' ', '-')}.xlsx`;
-  const fileUri = FileSystem.documentDirectory + fileName;
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  // Convert buffer to base64 using native API
-  let base64: string;
-  try {
-    // Try using Buffer if available (Node.js environment)
-    if (typeof Buffer !== 'undefined') {
-      base64 = Buffer.from(buffer).toString('base64');
-    } else {
-      // Fallback: convert ArrayBuffer to base64 using btoa
-      const bytes = new Uint8Array(buffer);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      base64 = btoa(binary);
-    }
-  } catch (error) {
-    console.error('Failed to convert buffer to base64:', error);
-    throw new Error('Failed to export Excel file');
-  }
-
-  await FileSystem.writeAsStringAsync(fileUri, base64, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  await Sharing.shareAsync(fileUri, {
-    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    dialogTitle: `Export ${monthName}`,
-  });
-}
 
 /**
  * Export as PDF for selected month/year

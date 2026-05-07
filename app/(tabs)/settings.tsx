@@ -11,7 +11,7 @@ import { useColors } from "@/hooks/use-colors";
 import * as storage from "@/lib/storage";
 import { exportAsXLS, exportAsPDF, exportAsCSV } from "@/lib/export-service";
 import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsCSV } from "@/lib/current-month-export-service";
-import { exportAsCSV as exportAsCSVFlex, exportAsXLS as exportAsXLSFlex, exportAsPDF as exportAsPDFFlex } from "@/lib/flexible-export-service";
+import { exportAsCSV as exportAsCSVFlex, exportAsPDF as exportAsPDFFlex } from "@/lib/flexible-export-service";
 import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 import { AdvancedExportModal, type ExportOptions } from "@/components/advanced-export-modal";
 import { SyncStatusIndicator } from "@/components/sync-status-indicator";
@@ -88,19 +88,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleExportXLS = async () => {
-    try {
-      setExporting(true);
-      const currentDate = new Date();
-      await exportAsXLSFlex(students, payments, currentDate.getMonth(), currentDate.getFullYear());
-      Alert.alert("Success", "Current month Excel file exported successfully");
-    } catch (error) {
-      Alert.alert("Error", "Failed to export Excel file");
-      console.error(error);
-    } finally {
-      setExporting(false);
-    }
-  };
+
 
   const handleExportPDF = async () => {
     try {
@@ -123,8 +111,7 @@ export default function SettingsScreen() {
       setExporting(true);
       if (options.format === "csv") {
         await exportAsCSVFlex(students, payments, options.month, options.year);
-      } else if (options.format === "xls") {
-        await exportAsXLSFlex(students, payments, options.month, options.year);
+
       } else if (options.format === "pdf") {
         await exportAsPDFFlex(students, payments, options.month, options.year);
       }
@@ -290,34 +277,7 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={handleExportXLS}
-              disabled={exporting || students.length === 0}
-              style={{
-                backgroundColor: colors.primary,
-                borderRadius: 8,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                flexDirection: "row",
-                alignItems: "center",
-                opacity: exporting || students.length === 0 ? 0.6 : 1,
-              }}
-              activeOpacity={0.8}
-            >
-              <MaterialIcons name="description" size={20} color="#ffffff" />
-              <Text className="text-white font-semibold ml-3 flex-1">
-                {exporting ? "Exporting..." : "Export as Excel"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setExportFormat("xls");
-                  setAdvancedExportVisible(true);
-                }}
-                disabled={exporting || students.length === 0}
-              >
-                <MaterialIcons name="expand-more" size={20} color="#ffffff" />
-              </TouchableOpacity>
-            </TouchableOpacity>
+
 
             <TouchableOpacity
               onPress={handleExportPDF}
