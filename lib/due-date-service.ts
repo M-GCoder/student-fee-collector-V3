@@ -1,13 +1,11 @@
 import { Student, Payment } from "./types";
 
-/**
- * Payment status for a student
- */
+//Payment status for a student
+ 
 export type PaymentStatus = "paid" | "pending" | "overdue";
 
-/**
- * Get the payment status for a student in the current month
- */
+//Get the payment status for a student in the current month
+ 
 export function getPaymentStatus(
   student: Student,
   payments: Payment[]
@@ -36,16 +34,14 @@ export function getPaymentStatus(
   return "pending";
 }
 
-/**
- * Check if a student's payment is overdue
- */
+//Check if a student's payment is overdue
+ 
 export function isPaymentOverdue(student: Student, payments: Payment[]): boolean {
   return getPaymentStatus(student, payments) === "overdue";
 }
 
-/**
- * Get days until due date (negative if overdue)
- */
+//Get days until due date (negative if overdue)
+ 
 export function getDaysUntilDue(student: Student): number | null {
   if (!student.dueDate) {
     return null;
@@ -62,9 +58,8 @@ export function getDaysUntilDue(student: Student): number | null {
   return diffDays;
 }
 
-/**
- * Format due date for display
- */
+// Format due date for display
+ 
 export function formatDueDate(dueDate: string | undefined): string {
   if (!dueDate) {
     return "No due date";
@@ -78,9 +73,8 @@ export function formatDueDate(dueDate: string | undefined): string {
   });
 }
 
-/**
- * Get due date status message
- */
+//Get due date status message
+ 
 export function getDueDateMessage(student: Student, payments: Payment[]): string {
   const status = getPaymentStatus(student, payments);
 
@@ -110,9 +104,8 @@ export function getDueDateMessage(student: Student, payments: Payment[]): string
   return `Due in ${daysUntilDue} day${daysUntilDue > 1 ? "s" : ""}`;
 }
 
-/**
- * Get color for payment status
- */
+//Get color for payment status
+ 
 export function getStatusColor(
   status: PaymentStatus,
   colors: any
