@@ -4,9 +4,8 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Student } from "./types";
 
-/**
- * Bulk import result with success and error counts
- */
+// Bulk import result with success and error counts
+
 export interface ImportResult {
   success: number;
   failed: number;
@@ -44,7 +43,7 @@ export async function pickAndParseXLSFile(): Promise<{
     const file = result.assets[0];
 
     // Validate file extension
-    const validExtensions = [".xlsx", ".xls", ".csv"];
+    const validExtensions = [".xlsx", ".csv"];
     const fileExtension = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
     if (!validExtensions.includes(fileExtension)) {
       throw new Error(`Invalid file format. Supported formats: ${validExtensions.join(", ")}`);
@@ -80,7 +79,7 @@ export async function pickAndParseXLSFile(): Promise<{
     }
 
     // Detect if first row is headers or data
-    // Headers typically contain text like "Name", "Class", "Fee", etc.
+    // Headers typically contain text like "Name", "Class", "Monthly Fee", "Email", "Password", "Due-date".
     // Data rows contain actual student information
     const firstRow = rawData[0];
     const hasHeaders = isHeaderRow(firstRow);
@@ -91,6 +90,9 @@ export async function pickAndParseXLSFile(): Promise<{
       column1: row[0] || "", // Name
       column2: row[1] || "", // Class
       column3: row[2] || "", // Monthly Fee
+      column4: row[3] || "", // Email
+      column5: row[4] || "", // Password 
+      column6: row[5] || "", // Due-date 
     }));
 
     if (data.length === 0) {
@@ -110,10 +112,10 @@ export async function pickAndParseXLSFile(): Promise<{
 
 /**
  * Detect if a row is a header row
- * Headers typically contain column names like "Name", "Class", "Fee", etc.
+ * Headers typically contain column names like "Name", "Class", "Fee", ""Email", "Password", Due-date" etc.
  */
 function isHeaderRow(row: any[]): boolean {
-  if (!row || row.length < 3) return false;
+  if (!row || row.length < 6) return false;
 
   const headerKeywords = [
     "name",
@@ -129,8 +131,8 @@ function isHeaderRow(row: any[]): boolean {
     "roll",
   ];
 
-  // Check if any of the first 3 columns contain header keywords
-  const firstThree = row.slice(0, 3).map((cell) => String(cell).toLowerCase().trim());
+  // Check if any of the first 6 columns contain header keywords
+  const firstThree = row.slice(0, 6).map((cell) => String(cell).toLowerCase().trim());
 
   const matchCount = firstThree.filter((cell) =>
     headerKeywords.some((keyword) => cell.includes(keyword))
@@ -160,10 +162,13 @@ export function validateAndProcessStudents(
   data.forEach((row, index) => {
     try {
       // Extract fields from positional columns
-      // Column 1: Name, Column 2: Class, Column 3: Monthly Fee
+      // Column 1: Name, Column 2: Class, Column 3: Monthly Fee, etc.
       const name = String(row.column1 || "").trim();
       const className = String(row.column2 || "").trim();
       const monthlyFee = parseFloat(String(row.column3 || "0"));
+      const email = String(row.column4 || "").trim();
+      const password = String(row.column5 || "").trim();
+      const Duedate = numeric(row.column6 || "10");
 
       // Validation
       if (!name) {
@@ -176,6 +181,14 @@ export function validateAndProcessStudents(
 
       if (isNaN(monthlyFee) || monthlyFee <= 0) {
         throw new Error("Monthly fee must be a positive number (Column 3)");
+      }
+
+      if (!email) {
+        throw new Error("Email is required (Column 4)");
+      }
+
+      if (!password) {
+        throw new Error("Password is required (Column 5)");
       }
 
       // Check for duplicates
@@ -208,15 +221,14 @@ export function validateAndProcessStudents(
   return result;
 }
 
-/**
- * Generate and download sample XLS template for import
- */
+//Generate and download sample XLS template for import
+ 
 export async function downloadSampleTemplate(): Promise<void> {
   try {
     const sampleData = [
-      { "Student Name": "John Doe", Class: "10-A", "Monthly Fee": 5000 },
-      { "Student Name": "Jane Smith", Class: "10-B", "Monthly Fee": 5000 },
-      { "Student Name": "Bob Johnson", Class: "10-A", "Monthly Fee": 5500 },
+      { "Student Name": "John Doe", Class: "10-A", "Monthly Fee": 5000, "Email": "john@gmail.com", "Password": "abc123", "Due Date": 10 },
+      { "Student Name": "Jane Smith", Class: "10-B", "Monthly Fee": 5000, Email": "jane@gmail.com", "Password": "abc123", "Due Date": 10 },
+      { "Student Name": "Bob Johnson", Class: "10-A", "Monthly Fee": 5500, Email": "bob@gmail.com", "Password": "abc123", "Due Date": 10 },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
@@ -224,7 +236,7 @@ export async function downloadSampleTemplate(): Promise<void> {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
 
     // Set column widths for better formatting
-    worksheet["!cols"] = [{ wch: 25 }, { wch: 12 }, { wch: 15 }];
+    worksheet["!cols"] = [{ wch: 25 }, { wch: 12 }, { wch: 15 }, { wch: 30 }, { wch: 22 }, { wch: 15 }];
 
     // Generate Excel file
     const xlsxData = XLSX.write(workbook, { type: "base64", bookType: "xlsx" });
@@ -249,9 +261,8 @@ export async function downloadSampleTemplate(): Promise<void> {
   }
 }
 
-/**
- * Format import errors for display
- */
+//Format import errors for display
+
 export function formatImportErrors(errors: ImportResult["errors"]): string {
   if (errors.length === 0) return "";
 
