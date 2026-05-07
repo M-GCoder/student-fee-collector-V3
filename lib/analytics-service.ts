@@ -22,9 +22,8 @@ export interface AnalyticsData {
   lowestPerformingClass: ClassAnalytics | null;
 }
 
-/**
- * Calculate analytics data for current month by class
- */
+// Calculate analytics data for current month by class
+
 export function calculateClassAnalytics(
   students: Student[],
   payments: Payment[]
@@ -113,9 +112,8 @@ export function calculateClassAnalytics(
   };
 }
 
-/**
- * Get chart data for collection rates by class
- */
+// Get chart data for collection rates by class
+ 
 export function getCollectionRateChartData(classAnalytics: ClassAnalytics[]) {
   return {
     labels: classAnalytics.map((c) => c.className),
@@ -131,15 +129,14 @@ export function getCollectionRateChartData(classAnalytics: ClassAnalytics[]) {
   };
 }
 
-/**
- * Get chart data for outstanding amounts by class
- */
+// Get chart data for outstanding amounts by class
+
 export function getOutstandingAmountChartData(classAnalytics: ClassAnalytics[]) {
   return {
     labels: classAnalytics.map((c) => c.className),
     datasets: [
       {
-        label: "Outstanding Amount (RS)",
+        label: "Outstanding Amount",
         data: classAnalytics.map((c) => c.outstandingAmount),
         backgroundColor: "#EF4444",
       },
@@ -147,22 +144,22 @@ export function getOutstandingAmountChartData(classAnalytics: ClassAnalytics[]) 
   };
 }
 
-/**
- * Get chart data for collected vs outstanding comparison
- */
+// Get chart data for collected vs outstanding comparison
+ 
 export function getCollectionComparisonChartData(classAnalytics: ClassAnalytics[]) {
   return {
     labels: classAnalytics.map((c) => c.className),
     datasets: [
       {
-        label: "Collected (RS)",
+        label: "Collected",
         data: classAnalytics.map((c) => c.collectedAmount),
         backgroundColor: "#22C55E",
       },
       {
-        label: "Outstanding (RS)",
+        label: "Outstanding",
         data: classAnalytics.map((c) => c.outstandingAmount),
-        backgroundColor: "#EF4444",
+        backgroundC
+          olor: "#EF4444",
       },
     ],
   };
