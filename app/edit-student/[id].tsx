@@ -21,7 +21,6 @@ export default function EditStudentScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [dueDate, setDueDate] = useState<Date | null>(null);
   const [monthlyDueDate, setMonthlyDueDate] = useState<number | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -37,9 +36,6 @@ export default function EditStudentScreen() {
         setFee(found.monthlyFee.toString());
         setEmail(found.email || "");
         setPassword(found.password || "");
-        if (found.dueDate) {
-          setDueDate(new Date(found.dueDate));
-        }
         if (found.monthlyDueDate) {
           setMonthlyDueDate(found.monthlyDueDate);
         }
@@ -84,7 +80,6 @@ export default function EditStudentScreen() {
         monthlyFee: parseFloat(fee),
         email: email.trim() || undefined,
         password: password.trim() || undefined,
-        dueDate: dueDate ? dueDate.toISOString() : undefined,
         monthlyDueDate: monthlyDueDate || undefined,
       };
       await updateStudent(updatedStudent);
