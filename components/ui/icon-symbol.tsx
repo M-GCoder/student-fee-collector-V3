@@ -20,6 +20,7 @@ const MAPPING = {
   "chevron.right": "chevron-right",
   "clock.fill": "history",
   "gear": "settings",
+  "book.fill": "summarize",
 } as IconMapping;
 
 /**
