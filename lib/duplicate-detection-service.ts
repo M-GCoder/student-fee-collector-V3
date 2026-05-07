@@ -1,4 +1,4 @@
-import { Student, Payment } from "./types";
+import { Student } from "./types";
 
 /**
  * Represents a duplicate student found during import
