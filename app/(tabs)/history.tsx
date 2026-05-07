@@ -1,8 +1,8 @@
-import { View, Text, FlatList, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, FlatList, ScrollView } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStudents } from "@/lib/student-context";
 import { useEffect, useState } from "react";
-import { Payment, MONTHS, Student } from "@/lib/types";
+import { Payment, MONTHS } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 
@@ -61,7 +61,7 @@ export default function HistoryScreen() {
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
       <View className="flex-row items-center justify-between mb-2">
         <Text className="text-base font-semibold text-foreground">{item.studentName}</Text>
-        <Text className="text-lg font-bold text-success">RS{item.amount}</Text>
+        <Text className="text-lg font-bold text-success">RS {item.amount}</Text>
       </View>
       <View className="flex-row items-center justify-between">
         <Text className="text-sm text-muted">
