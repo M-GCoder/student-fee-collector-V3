@@ -64,7 +64,7 @@ export default function HomeScreen() {
   }, [router]);
 
   const handleStudentPress = useCallback((studentId: string) => {
-    router.push(`/edit-student/${studentId}`);
+    router.push(`/student-detail/${studentId}`);
   }, [router]);
 
   // Memoized StudentItem component to prevent unnecessary re-renders
