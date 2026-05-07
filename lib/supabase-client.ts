@@ -17,8 +17,7 @@ export interface SupabaseStudent {
   name: string;
   class: string;
   monthly_fee: number;
-  monthly_due_date?: number; // Day of month (1-31)
-  due_date?: string; // ISO date string
+  monthly_due_date?: number; // Day of month (1-30)
   created_at: string;
   updated_at: string;
 }
