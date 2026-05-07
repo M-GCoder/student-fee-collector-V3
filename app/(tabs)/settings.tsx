@@ -28,6 +28,7 @@ export default function SettingsScreen() {
   const [syncStatusKey, setSyncStatusKey] = useState(0);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [autoImportEnabled, setAutoImportEnabled] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all');
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -73,6 +74,18 @@ export default function SettingsScreen() {
   const currentMonthCount = currentMonthPayments.length;
   const currentMonthAmount = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
   const unpaidCount = students.length - currentMonthCount;
+
+  // Filter payments based on selected filter
+  const filteredPayments = paymentFilter === 'all' 
+    ? currentMonthPayments 
+    : paymentFilter === 'paid' 
+    ? currentMonthPayments.filter(p => p.paidDate)
+    : currentMonthPayments.filter(p => !p.paidDate);
+
+  // Calculate filtered statistics
+  const filteredPaidCount = currentMonthPayments.filter(p => p.paidDate).length;
+  const filteredPendingCount = currentMonthPayments.filter(p => !p.paidDate).length;
+  const filteredAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
 
   const handleExportCSV = async () => {
     try {
@@ -161,7 +174,56 @@ export default function SettingsScreen() {
 
         {/* Data Summary */}
         <View className="bg-surface rounded-lg p-4 mb-6 border border-border">
-          <Text className="text-sm font-semibold text-foreground mb-4">Data Summary</Text>
+          <View className="flex-row items-center justify-between mb-4">
+            <Text className="text-sm font-semibold text-foreground">Data Summary</Text>
+            <View className="flex-row gap-2">
+              <TouchableOpacity
+                onPress={() => setPaymentFilter('all')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 6,
+                  backgroundColor: paymentFilter === 'all' ? colors.primary : colors.border,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: paymentFilter === 'all' ? 'white' : colors.foreground,
+                }}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setPaymentFilter('paid')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 6,
+                  backgroundColor: paymentFilter === 'paid' ? colors.success : colors.border,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: paymentFilter === 'paid' ? 'white' : colors.foreground,
+                }}>Paid</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setPaymentFilter('pending')}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 6,
+                  backgroundColor: paymentFilter === 'pending' ? colors.error : colors.border,
+                }}
+              >
+                <Text style={{
+                  fontSize: 12,
+                  fontWeight: '600',
+                  color: paymentFilter === 'pending' ? 'white' : colors.foreground,
+                }}>Pending</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <View className="flex-row justify-between mb-3">
             <View className="flex-1">
               <Text className="text-xs text-muted mb-1">Total Students</Text>
@@ -169,11 +231,13 @@ export default function SettingsScreen() {
             </View>
             <View className="flex-1">
               <Text className="text-xs text-muted mb-1">Current Month Payments</Text>
-              <Text className="text-lg font-bold text-foreground">{currentMonthCount}</Text>
+              <Text className="text-lg font-bold text-foreground">{filteredPayments.length}</Text>
             </View>
             <View className="flex-1">
-              <Text className="text-xs text-muted mb-1">Unpaid This Month</Text>
-              <Text className="text-lg font-bold text-error">{unpaidCount}</Text>
+              <Text className="text-xs text-muted mb-1">{paymentFilter === 'all' ? 'Unpaid This Month' : paymentFilter === 'paid' ? 'Paid' : 'Pending'}</Text>
+              <Text className={`text-lg font-bold ${paymentFilter === 'paid' ? 'text-success' : paymentFilter === 'pending' ? 'text-error' : 'text-foreground'}`}>
+                {paymentFilter === 'all' ? unpaidCount : paymentFilter === 'paid' ? filteredPaidCount : filteredPendingCount}
+              </Text>
             </View>
           </View>
           <View className="flex-row justify-between pt-3 border-t border-border mb-3">
@@ -183,9 +247,9 @@ export default function SettingsScreen() {
             </Text>
           </View>
           <View className="flex-row justify-between pt-3 border-t border-border">
-            <Text className="text-sm text-muted">Current Month Amount</Text>
+            <Text className="text-sm text-muted">{paymentFilter === 'all' ? 'Current Month Amount' : paymentFilter === 'paid' ? 'Paid Amount' : 'Pending Amount'}</Text>
             <Text className="text-sm font-semibold text-success">
-              RS{currentMonthAmount}
+              RS{filteredAmount}
             </Text>
           </View>
         </View>
