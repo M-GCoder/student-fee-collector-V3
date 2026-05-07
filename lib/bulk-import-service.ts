@@ -168,7 +168,7 @@ export function validateAndProcessStudents(
       const monthlyFee = parseFloat(String(row.column3 || "0"));
       const email = String(row.column4 || "").trim();
       const password = String(row.column5 || "").trim();
-      const Duedate = numeric(row.column6 || "10");
+      const Duedate = parseInt(String(row.column6 || "10"), 10);
 
       // Validation
       if (!name) {
@@ -227,8 +227,8 @@ export async function downloadSampleTemplate(): Promise<void> {
   try {
     const sampleData = [
       { "Student Name": "John Doe", Class: "10-A", "Monthly Fee": 5000, "Email": "john@gmail.com", "Password": "abc123", "Due Date": 10 },
-      { "Student Name": "Jane Smith", Class: "10-B", "Monthly Fee": 5000, Email": "jane@gmail.com", "Password": "abc123", "Due Date": 10 },
-      { "Student Name": "Bob Johnson", Class: "10-A", "Monthly Fee": 5500, Email": "bob@gmail.com", "Password": "abc123", "Due Date": 10 },
+      { "Student Name": "Jane Smith", Class: "10-B", "Monthly Fee": 5000, "Email": "jane@gmail.com", "Password": "abc123", "Due Date": 10 },
+      { "Student Name": "Bob Johnson", Class: "10-A", "Monthly Fee": 5500, "Email": "bob@gmail.com", "Password": "abc123", "Due Date": 10 },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(sampleData);

@@ -158,8 +158,7 @@ export function getCollectionComparisonChartData(classAnalytics: ClassAnalytics[
       {
         label: "Outstanding",
         data: classAnalytics.map((c) => c.outstandingAmount),
-        backgroundC
-          olor: "#EF4444",
+        backgroundColor: "#EF4444",
       },
     ],
   };

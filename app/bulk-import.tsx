@@ -1,6 +1,6 @@
 import { ScrollView, View, Text, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import { DragDropFileUpload } from "@/components/drag-drop-file-upload";
+
 import { DuplicateResolutionModal } from "@/components/duplicate-resolution-modal";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -372,15 +372,7 @@ export default function BulkImportScreen() {
                 </Text>
               </View>
 
-              {/* Drag-Drop File Upload */}
-              <View className="mb-6">
-                <DragDropFileUpload
-                  onFileSelected={handleDragDropFile}
-                  acceptedFormats={[".xlsx", ".xls", ".csv"]}
-                  disabled={loading}
-                  loading={loading}
-                />
-              </View>
+
 
               {/* Divider */}
               <View className="flex-row items-center mb-6">

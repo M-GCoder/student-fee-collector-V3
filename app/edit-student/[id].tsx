@@ -92,12 +92,7 @@ export default function EditStudentScreen() {
     }
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (selectedDate) {
-      setDueDate(selectedDate);
-    }
-    setShowDatePicker(false);
-  };
+
 
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -256,45 +251,6 @@ export default function EditStudentScreen() {
             )}
           </View>
 
-          {/* Due Date Field */}
-          <View>
-            <Text className="text-sm font-semibold text-foreground mb-2">Payment Due Date (Optional)</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              disabled={saving}
-              style={{
-                borderWidth: 1,
-                borderColor: colors.border,
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                backgroundColor: colors.surface,
-              }}
-            >
-              <Text style={{ fontSize: 16, color: dueDate ? colors.foreground : colors.muted }}>
-                {dueDate
-                  ? dueDate.toLocaleDateString("en-IN", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })
-                  : "Select due date"}
-              </Text>
-              <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
-            </TouchableOpacity>
-            {dueDate && (
-              <TouchableOpacity
-                onPress={() => setDueDate(null)}
-                style={{ marginTop: 8 }}
-              >
-                <Text className="text-xs text-primary">Clear date</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
           {/* Monthly Due Date Field */}
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Monthly Payment Due Date (Optional)</Text>
@@ -338,15 +294,7 @@ export default function EditStudentScreen() {
           </View>
         </View>
 
-        {showDatePicker && (
-          <DateTimePicker
-            value={dueDate || new Date()}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-            minimumDate={new Date()}
-          />
-        )}
+
 
         {/* Buttons */}
         <View className="gap-3 mt-auto">
