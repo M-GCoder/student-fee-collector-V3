@@ -1,4 +1,4 @@
-import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
@@ -21,8 +21,10 @@ export default function EditStudentScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [monthlyDueDate, setMonthlyDueDate] = useState<number | null>(null);
+  const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [monthlyDueDate, setMonthlyDueDate] = useState<Date | null>(null);
+  const [showMonthlyDatePicker, setShowMonthlyDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -37,7 +39,9 @@ export default function EditStudentScreen() {
         setEmail(found.email || "");
         setPassword(found.password || "");
         if (found.monthlyDueDate) {
-          setMonthlyDueDate(found.monthlyDueDate);
+          const date = new Date();
+          date.setDate(found.monthlyDueDate);
+          setMonthlyDueDate(date);
         }
       }
       setLoading(false);
@@ -80,7 +84,7 @@ export default function EditStudentScreen() {
         monthlyFee: parseFloat(fee),
         email: email.trim() || undefined,
         password: password.trim() || undefined,
-        monthlyDueDate: monthlyDueDate || undefined,
+        monthlyDueDate: monthlyDueDate ? monthlyDueDate.getDate() : undefined,
       };
       await updateStudent(updatedStudent);
       Alert.alert("Success", "Student updated successfully");
@@ -99,6 +103,20 @@ export default function EditStudentScreen() {
     return emailRegex.test(email);
   };
 
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setDueDate(selectedDate);
+    }
+    setShowDatePicker(false);
+  };
+
+  const handleMonthlyDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setMonthlyDueDate(selectedDate);
+    }
+    setShowMonthlyDatePicker(false);
+  };
+
   if (loading) {
     return (
       <ScreenContainer className="items-center justify-center">
@@ -109,7 +127,6 @@ export default function EditStudentScreen() {
 
   return (
     <ScreenContainer className="p-4">
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         {/* Header */}
         <View className="mb-6 flex-row items-center">
           <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
@@ -254,41 +271,38 @@ export default function EditStudentScreen() {
           {/* Monthly Due Date Field */}
           <View>
             <Text className="text-sm font-semibold text-foreground mb-2">Monthly Payment Due Date (Optional)</Text>
-            <Text className="text-xs text-muted mb-3">Select the day of month when fees are due every month (1-31)</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                <TouchableOpacity
-                  key={day}
-                  onPress={() => setMonthlyDueDate(monthlyDueDate === day ? null : day)}
-                  style={{
-                    width: "22%",
-                    paddingVertical: 10,
-                    paddingHorizontal: 8,
-                    borderRadius: 6,
-                    borderWidth: 1,
-                    borderColor: monthlyDueDate === day ? colors.primary : colors.border,
-                    backgroundColor: monthlyDueDate === day ? colors.primary : colors.surface,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
-                      fontWeight: "600",
-                      color: monthlyDueDate === day ? "white" : colors.foreground,
-                    }}
-                  >
-                    {day}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TouchableOpacity
+              onPress={() => setShowMonthlyDatePicker(true)}
+              disabled={saving}
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                backgroundColor: colors.surface,
+              }}
+            >
+              <Text style={{ fontSize: 16, color: monthlyDueDate ? colors.foreground : colors.muted }}>
+                {monthlyDueDate
+                  ? monthlyDueDate.toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                  : "Select due date"}
+              </Text>
+              <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
+            </TouchableOpacity>
             {monthlyDueDate && (
               <TouchableOpacity
                 onPress={() => setMonthlyDueDate(null)}
                 style={{ marginTop: 8 }}
               >
-                <Text className="text-xs text-primary">Clear selection</Text>
+                <Text className="text-xs text-primary">Clear date</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -330,7 +344,25 @@ export default function EditStudentScreen() {
             <Text className="text-foreground font-semibold text-base">Cancel</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dueDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            minimumDate={new Date()}
+          />
+        )}
+
+        {showMonthlyDatePicker && (
+          <DateTimePicker
+            value={monthlyDueDate || new Date()}
+            mode="date"
+            display="default"
+            onChange={handleMonthlyDateChange}
+          />
+        )}
     </ScreenContainer>
   );
 }
