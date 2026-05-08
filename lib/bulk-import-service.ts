@@ -90,9 +90,9 @@ export async function pickAndParseXLSFile(): Promise<{
       column1: row[0] || "", // Name
       column2: row[1] || "", // Class
       column3: row[2] || "", // Monthly Fee
-      column4: row[3] || "", // Email
-      column5: row[4] || "", // Password 
-      column6: row[5] || "", // Due-date 
+      column4: row[3] || "", // Due Date
+      column5: row[4] || "", // Email
+      column6: row[5] || "", // Password
     }));
 
     if (data.length === 0) {
@@ -162,13 +162,13 @@ export function validateAndProcessStudents(
   data.forEach((row, index) => {
     try {
       // Extract fields from positional columns
-      // Column 1: Name, Column 2: Class, Column 3: Monthly Fee, etc.
+      // Column 1: Name, Column 2: Class, Column 3: Monthly Fee, Column 4: Due Date, Column 5: Email, Column 6: Password
       const name = String(row.column1 || "").trim();
       const className = String(row.column2 || "").trim();
       const monthlyFee = parseFloat(String(row.column3 || "0"));
-      const email = String(row.column4 || "").trim();
-      const password = String(row.column5 || "").trim();
-      const Duedate = parseInt(String(row.column6 || "10"), 10);
+      const dueDate = parseInt(String(row.column4 || "10"), 10);
+      const email = String(row.column5 || "").trim();
+      const password = String(row.column6 || "").trim();
 
       // Validation
       if (!name) {
@@ -183,12 +183,16 @@ export function validateAndProcessStudents(
         throw new Error("Monthly fee must be a positive number (Column 3)");
       }
 
+      if (isNaN(dueDate) || dueDate < 1 || dueDate > 31) {
+        throw new Error("Due Date must be a number between 1 and 31 (Column 4)");
+      }
+
       if (!email) {
-        throw new Error("Email is required (Column 4)");
+        throw new Error("Email is required (Column 5)");
       }
 
       if (!password) {
-        throw new Error("Password is required (Column 5)");
+        throw new Error("Password is required (Column 6)");
       }
 
       // Check for duplicates
@@ -202,6 +206,9 @@ export function validateAndProcessStudents(
         name,
         class: className,
         monthlyFee,
+        monthlyDueDate: dueDate,
+        email,
+        password,
         createdAt: new Date().toISOString(),
       };
 
@@ -226,9 +233,9 @@ export function validateAndProcessStudents(
 export async function downloadSampleTemplate(): Promise<void> {
   try {
     const sampleData = [
-      { "Student Name": "John Doe", Class: "10-A", "Monthly Fee": 5000, "Email": "john@gmail.com", "Password": "abc123", "Due Date": 10 },
-      { "Student Name": "Jane Smith", Class: "10-B", "Monthly Fee": 5000, "Email": "jane@gmail.com", "Password": "abc123", "Due Date": 10 },
-      { "Student Name": "Bob Johnson", Class: "10-A", "Monthly Fee": 5500, "Email": "bob@gmail.com", "Password": "abc123", "Due Date": 10 },
+      { "Name": "John Doe", "Class": "10-A", "Monthly Fee": 5000, "Due Date": 10, "Email": "john@gmail.com", "Password": "abc123" },
+      { "Name": "Jane Smith", "Class": "10-B", "Monthly Fee": 5000, "Due Date": 15, "Email": "jane@gmail.com", "Password": "abc123" },
+      { "Name": "Bob Johnson", "Class": "10-A", "Monthly Fee": 5500, "Due Date": 20, "Email": "bob@gmail.com", "Password": "abc123" },
     ];
 
     const worksheet = XLSX.utils.json_to_sheet(sampleData);
