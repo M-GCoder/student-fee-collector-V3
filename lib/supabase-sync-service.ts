@@ -1,4 +1,4 @@
-import { supabase, SupabaseStudent, SupabasePayment } from "./supabase-client";
+import { DynamicSupabaseClient, SupabaseStudent, SupabasePayment } from "./supabase-dynamic-client";
 import { Student, Payment } from "./types";
 
 /**
@@ -10,6 +10,7 @@ export class SupabaseSyncService {
    */
   static async initializeTables(): Promise<void> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       // Check if tables exist by querying them
       await supabase.from("students").select("id").limit(1);
       await supabase.from("payments").select("id").limit(1);
@@ -25,6 +26,7 @@ export class SupabaseSyncService {
    */
   static async syncStudentsToCloud(students: Student[]): Promise<void> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const supabaseStudents: SupabaseStudent[] = students.map((student) => ({
         id: student.id,
         name: student.name,
@@ -60,18 +62,19 @@ export class SupabaseSyncService {
    */
   static async syncPaymentsToCloud(payments: Payment[]): Promise<void> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const supabasePayments: SupabasePayment[] = payments.map((payment) => ({
         id: payment.id,
         student_id: payment.studentId,
         month: payment.month,
         year: payment.year,
-        payment_date: payment.paidDate,
+        payment_date: payment.paymentDate,
         amount: payment.amount,
-        created_at: new Date().toISOString(),
+        paid_date: payment.paidDate,
+        created_at: payment.createdAt,
         updated_at: new Date().toISOString(),
       }));
 
-      // Upsert payments (insert or update if exists)
       const { error } = await supabase.from("payments").upsert(supabasePayments, {
         onConflict: "id",
       });
@@ -94,6 +97,7 @@ export class SupabaseSyncService {
    */
   static async fetchStudentsFromCloud(): Promise<Student[]> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const { data, error } = await supabase.from("students").select("*");
 
       if (error) {
@@ -124,6 +128,7 @@ export class SupabaseSyncService {
    */
   static async fetchPaymentsFromCloud(): Promise<Payment[]> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const { data, error } = await supabase.from("payments").select("*");
 
       if (error) {
@@ -139,8 +144,10 @@ export class SupabaseSyncService {
         studentId: row.student_id,
         month: row.month,
         year: row.year,
-        paidDate: row.payment_date,
+        paidDate: row.paid_date,
+        paymentDate: row.payment_date,
         amount: row.amount,
+        createdAt: row.created_at,
       }));
 
       console.log(`Fetched ${payments.length} payments from cloud`);
@@ -156,6 +163,7 @@ export class SupabaseSyncService {
    */
   static async deleteStudentFromCloud(studentId: string): Promise<void> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const { error } = await supabase.from("students").delete().eq("id", studentId);
 
       if (error) {
@@ -174,6 +182,7 @@ export class SupabaseSyncService {
    */
   static async deletePaymentFromCloud(paymentId: string): Promise<void> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const { error } = await supabase.from("payments").delete().eq("id", paymentId);
 
       if (error) {
@@ -210,10 +219,11 @@ export class SupabaseSyncService {
   }
 
   /**
-   * Check if Supabase connection is available
+   * Check connection to Supabase
    */
   static async checkConnection(): Promise<boolean> {
     try {
+      const supabase = await DynamicSupabaseClient.getClient();
       const { error } = await supabase.from("students").select("id").limit(1);
       return !error;
     } catch (error) {

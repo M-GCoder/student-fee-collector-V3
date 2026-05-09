@@ -33,7 +33,7 @@ export function prepareExportData(
       name: student.name,
       class: student.class,
       fee: student.monthlyFee,
-      paymentDate: payment
+      paymentDate: payment && payment.paidDate
         ? new Date(payment.paidDate).toLocaleDateString('en-IN', {
             year: 'numeric',
             month: '2-digit',

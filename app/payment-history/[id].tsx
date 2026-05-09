@@ -23,13 +23,14 @@ export default function PaymentHistoryScreen() {
       setStudent(found || null);
       const studentPay = payments
         .filter((p) => p.studentId === id)
-        .sort((a, b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime());
+        .sort((a, b) => new Date(b.paidDate || 0).getTime() - new Date(a.paidDate || 0).getTime());
       setStudentPayments(studentPay);
       setLoading(false);
     }
   }, [id, students, payments]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Pending";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-IN", {
       year: "numeric",
@@ -44,7 +45,7 @@ export default function PaymentHistoryScreen() {
         <Text className="text-base font-semibold text-foreground">
           {MONTHS[item.month]} {item.year}
         </Text>
-        <Text className="text-sm text-muted mt-1">Paid on {formatDate(item.paidDate)}</Text>
+        <Text className="text-sm text-muted mt-1">{item.paidDate ? `Paid on ${formatDate(item.paidDate)}` : "Pending"}</Text>
       </View>
       <View className="items-end">
         <Text className="text-lg font-bold text-success">{CURRENCY_SYMBOL}{item.amount}</Text>

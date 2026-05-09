@@ -21,8 +21,10 @@ export interface Payment {
   studentId: string;
   month: number; // 0-11 (Jan-Dec)
   year: number;
-  paidDate: string; // ISO date string
+  paidDate?: string; // ISO date string (when payment was marked as paid)
+  paymentDate?: string; // ISO date string (when payment was recorded)
   amount: number;
+  createdAt?: string; // ISO date string
 }
 
 /**

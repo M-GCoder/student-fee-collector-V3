@@ -25,13 +25,14 @@ export default function HistoryScreen() {
     });
 
     const sorted = paymentsWithNames.sort(
-      (a, b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime()
+      (a, b) => new Date(b.paidDate || 0).getTime() - new Date(a.paidDate || 0).getTime()
     );
 
     setSortedPayments(sorted);
   }, [payments, students]);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-IN", {
       year: "numeric",

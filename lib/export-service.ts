@@ -14,11 +14,11 @@ function buildExportRows(students: Student[], payments: Payment[]) {
 
     // Most recent payment
     const sortedPayments = [...studentPayments].sort(
-      (a, b) => new Date(b.paidDate).getTime() - new Date(a.paidDate).getTime()
+      (a, b) => new Date(b.paidDate || 0).getTime() - new Date(a.paidDate || 0).getTime()
     );
     const lastPayment = sortedPayments[0];
 
-    const paymentDate = lastPayment
+    const paymentDate = lastPayment && lastPayment.paidDate
       ? new Date(lastPayment.paidDate).toLocaleDateString("en-IN")
       : "Pending";
 
