@@ -69,6 +69,13 @@ export default function RootLayout() {
   useEffect(() => {
     const performAutoSync = async () => {
       try {
+        // Check if Supabase is configured before attempting auto-sync
+        const isConfigured = await DynamicSupabaseClient.isConfigured();
+        if (!isConfigured) {
+          console.log("Supabase not configured, skipping auto-sync");
+          return;
+        }
+
         const isAutoSyncEnabled = await AutoSyncService.isAutoSyncEnabled();
         if (isAutoSyncEnabled) {
           console.log("Auto-sync enabled, syncing data from cloud...");
@@ -89,6 +96,12 @@ export default function RootLayout() {
   useEffect(() => {
     const performPeriodicImport = async () => {
       try {
+        // Check if Supabase is configured before attempting auto-import
+        const isConfigured = await DynamicSupabaseClient.isConfigured();
+        if (!isConfigured) {
+          return;
+        }
+
         const isAutoImportEnabled = await AutomaticImportService.isAutoImportEnabled();
         if (isAutoImportEnabled) {
           console.log("Auto-import enabled, checking for cloud data changes...");
