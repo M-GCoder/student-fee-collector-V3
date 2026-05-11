@@ -25,6 +25,8 @@ import { SupabaseSyncService } from "@/lib/supabase-sync-service";
 import { updateSyncStatus } from "@/lib/sync-status-service";
 import { CloudImportService } from "@/lib/cloud-import-service";
 import { AutomaticImportService } from "@/lib/automatic-import-service";
+import { DynamicSupabaseClient } from "@/lib/supabase-dynamic-client";
+import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -39,10 +41,28 @@ export default function RootLayout() {
 
   const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
   const [frame, setFrame] = useState<Rect>(initialFrame);
+  const [showSupabaseConfig, setShowSupabaseConfig] = useState(false);
+  const [isFirstLaunch, setIsFirstLaunch] = useState(false);
 
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+  }, []);
+
+  // Check if Supabase is configured on first launch
+  useEffect(() => {
+    const checkSupabaseConfig = async () => {
+      try {
+        const isConfigured = await DynamicSupabaseClient.isConfigured();
+        if (!isConfigured) {
+          setShowSupabaseConfig(true);
+          setIsFirstLaunch(true);
+        }
+      } catch (error) {
+        console.error("Error checking Supabase config:", error);
+      }
+    };
+    checkSupabaseConfig();
   }, []);
 
   // Auto-sync on app launch and periodic automatic import
@@ -148,6 +168,15 @@ export default function RootLayout() {
               <Stack.Screen name="bulk-import" />
             </Stack>
             <StatusBar style="auto" />
+            <SupabaseConfigModal
+              visible={showSupabaseConfig}
+              onClose={() => setShowSupabaseConfig(false)}
+              onConfigured={() => {
+                setShowSupabaseConfig(false);
+                setIsFirstLaunch(false);
+              }}
+              isFirstLaunch={isFirstLaunch}
+            />
             </StudentProvider>
           </QueryClientProvider>
         </trpc.Provider>

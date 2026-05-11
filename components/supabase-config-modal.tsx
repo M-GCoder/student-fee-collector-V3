@@ -13,17 +13,22 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SupabaseSyncService } from "@/lib/supabase-sync-service";
+import { DynamicSupabaseClient } from "@/lib/supabase-dynamic-client";
 
 interface SupabaseConfigModalProps {
   visible: boolean;
   onClose: () => void;
+  onConfigured?: () => void;
   onSyncComplete?: () => void;
+  isFirstLaunch?: boolean;
 }
 
 export function SupabaseConfigModal({
   visible,
   onClose,
+  onConfigured,
   onSyncComplete,
+  isFirstLaunch = false,
 }: SupabaseConfigModalProps) {
   const colors = useColors();
   const [projectUrl, setProjectUrl] = useState("");
@@ -39,19 +44,26 @@ export function SupabaseConfigModal({
 
     try {
       setLoading(true);
-      const isConnected = await SupabaseSyncService.checkConnection();
+      
+      // Save configuration to DynamicSupabaseClient
+      await DynamicSupabaseClient.setConfig(projectUrl.trim(), anonKey.trim());
+
+      // Test connection
+      const isConnected = await DynamicSupabaseClient.testConnection(projectUrl.trim(), anonKey.trim());
 
       if (isConnected) {
-        Alert.alert("Success", "Connected to Supabase successfully!");
-        // Save credentials to AsyncStorage
-        await AsyncStorage.setItem(
-          "supabase_config",
-          JSON.stringify({
-            projectUrl,
-            anonKey,
-            configuredAt: new Date().toISOString(),
-          })
-        );
+        Alert.alert("Success", "Connected to Supabase successfully!", [
+          {
+            text: "OK",
+            onPress: () => {
+              if (isFirstLaunch) {
+                setProjectUrl("");
+                setAnonKey("");
+                onConfigured?.();
+              }
+            },
+          },
+        ]);
       } else {
         Alert.alert("Error", "Failed to connect to Supabase. Please check your credentials.");
       }
@@ -165,9 +177,11 @@ export function SupabaseConfigModal({
                 Supabase Sync
               </Text>
             </View>
-            <TouchableOpacity onPress={onClose} disabled={syncInProgress}>
-              <MaterialIcons name="close" size={24} color={colors.foreground} />
-            </TouchableOpacity>
+            {!isFirstLaunch && (
+              <TouchableOpacity onPress={onClose} disabled={syncInProgress}>
+                <MaterialIcons name="close" size={24} color={colors.foreground} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <ScrollView
@@ -261,11 +275,13 @@ export function SupabaseConfigModal({
                   <MaterialIcons name="check-circle" size={20} color="#ffffff" />
                 )}
                 <Text style={{ color: "#ffffff", fontWeight: "600", marginLeft: 8 }}>
-                  {loading ? "Testing..." : "Test Connection"}
+                  {loading ? "Testing..." : isFirstLaunch ? "Configure & Continue" : "Test Connection"}
                 </Text>
               </TouchableOpacity>
             </View>
 
+            {!isFirstLaunch && (
+              <>
             {/* Sync Actions Section */}
             <View style={{ marginBottom: 24 }}>
               <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
@@ -321,6 +337,8 @@ export function SupabaseConfigModal({
                 </Text>
               </TouchableOpacity>
             </View>
+              </>
+            )}
 
             {/* Info Section */}
             <View
@@ -336,10 +354,9 @@ export function SupabaseConfigModal({
                 ℹ️ How to use
               </Text>
               <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 18 }}>
-                1. Get your Supabase Project URL and Anon Key from your Supabase dashboard{"\n"}
-                2. Paste them above and test the connection{"\n"}
-                3. Click "Sync to Cloud" to upload your data{"\n"}
-                4. Click "Import from Cloud" to download data from Supabase
+                {isFirstLaunch
+                  ? "Get your Supabase Project URL and Anon Key from your Supabase dashboard Settings → API. Your database must have 'students' and 'payments' tables."
+                  : "1. Get your Supabase Project URL and Anon Key from your Supabase dashboard\n2. Paste them above and test the connection\n3. Click \"Sync to Cloud\" to upload your data\n4. Click \"Import from Cloud\" to download data from Supabase"}
               </Text>
             </View>
           </ScrollView>

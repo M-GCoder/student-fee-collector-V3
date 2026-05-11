@@ -161,6 +161,7 @@ export default function SettingsScreen() {
                 borderWidth: 1,
                 borderColor: colors.border,
               }}
+              activeOpacity={0.7}
             >
               <MaterialIcons name="more-vert" size={24} color={colors.foreground} />
             </TouchableOpacity>
