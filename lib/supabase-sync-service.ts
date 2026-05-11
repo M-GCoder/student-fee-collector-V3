@@ -97,6 +97,13 @@ export class SupabaseSyncService {
    */
   static async fetchStudentsFromCloud(): Promise<Student[]> {
     try {
+      // Check if Supabase is configured
+      const isConfigured = await DynamicSupabaseClient.isConfigured();
+      if (!isConfigured) {
+        console.log("Supabase not configured, returning empty students list");
+        return [];
+      }
+
       const supabase = await DynamicSupabaseClient.getClient();
       const { data, error } = await supabase.from("students").select("*");
 
@@ -128,6 +135,13 @@ export class SupabaseSyncService {
    */
   static async fetchPaymentsFromCloud(): Promise<Payment[]> {
     try {
+      // Check if Supabase is configured
+      const isConfigured = await DynamicSupabaseClient.isConfigured();
+      if (!isConfigured) {
+        console.log("Supabase not configured, returning empty payments list");
+        return [];
+      }
+
       const supabase = await DynamicSupabaseClient.getClient();
       const { data, error } = await supabase.from("payments").select("*");
 
