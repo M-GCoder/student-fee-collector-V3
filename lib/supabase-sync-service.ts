@@ -68,9 +68,8 @@ export class SupabaseSyncService {
         student_id: payment.studentId,
         month: payment.month,
         year: payment.year,
-        payment_date: payment.paymentDate,
+        payment_date: payment.paymentDate || payment.paidDate || new Date().toISOString(),
         amount: payment.amount,
-        paid_date: payment.paidDate,
         created_at: payment.createdAt,
         updated_at: new Date().toISOString(),
       }));
