@@ -100,6 +100,47 @@ export class DynamicSupabaseClient {
   }
 
   /**
+   * Save student session for portal login
+   */
+  static async saveStudentSession(student: { id: string; email: string; name: string }): Promise<void> {
+    try {
+      await AsyncStorage.setItem('student_session', JSON.stringify({
+        ...student,
+        loginTime: new Date().toISOString(),
+      }));
+    } catch (error) {
+      console.error("Error saving student session:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get current student session
+   */
+  static async getStudentSession(): Promise<{ id: string; email: string; name: string } | null> {
+    try {
+      const session = await AsyncStorage.getItem('student_session');
+      if (!session) return null;
+      return JSON.parse(session);
+    } catch (error) {
+      console.error("Error getting student session:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Clear student session
+   */
+  static async clearStudentSession(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem('student_session');
+    } catch (error) {
+      console.error("Error clearing student session:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Test connection with given credentials
    */
   static async testConnection(projectUrl: string, anonKey: string): Promise<boolean> {
