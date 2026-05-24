@@ -1,0 +1,49 @@
+{
+  "build_command": "pnpm run build",
+  "capabilities": [
+    "db",
+    "server",
+    "user"
+  ],
+  "dev_command": "pnpm run dev",
+  "env_vars": {
+    "DATABASE_URL": "mysql://4Z2RL5zVcMY94Vu.root:4K4kUBBbnVs7AZD837FG@gateway04.us-east-1.prod.aws.tidbcloud.com:4000/9YtHJ3Tdj8oF3nGcS83H3K?ssl={\"rejectUnauthorized\":true}"
+  },
+  "experiments": [
+    "no_db_push"
+  ],
+  "git_remote": {
+    "repo_url": "s3://vida-prod-gitrepo/webdev-git/310519663443706151/9YtHJ3Tdj8oF3nGcS83H3K",
+    "access_key_id": "ASIAZV3A2ECZERMHNIBU",
+    "secret_access_key": "UatvrUKoUoZwMUnWINXUWalx0YTnKrwOaLjxGryY",
+    "session_token": "IQoJb3JpZ2luX2VjEH8aCXVzLWVhc3QtMSJIMEYCIQCERCY7FEpeaGp5eLVTKVQ+UE4jDBKwGJ9r+Rx/m+US8wIhAMu7BPv3sv6PZVTTesElXlD8zXKsM3PaY+5SJwectNDSKvYDCEgQBBoMNjY1Mzg2MDk4ODY2IgxxyFnWsAap/84ctXwq0wMbkUl7wY66oob04T/xBOeOU928Mtxql+ufVN/x+sAbnu3yCCylgMwNiMbkkMgzMf16KOZb6SvdLDDmbO13Tn4LwztkrbAB4pz0tCROKiEG6SiPOz/afTp2UdTAkdyskmig+meUpdTVAAUB19o97WMbUannPOgDP0mrTcm/9KrPZV8O4VSwDWeI3BvJH5hDYBKntKzkipSvj/v1oOkOjQFss6HGlo/HIz6u8nAIvgZHyDYy7nDjUjdExqw2qW95boKcnovax0F+Mg2YHqwptGrIsMZ1vg+nP330+gimvJ1a3Usd1fy7nhqfsYLWGSBRDBG8f6hWoiwtR+wGRhlBe6xkgD+p39xcxwDbCPxA1/EDHNIBGD08sBuJ1iotBkpG42XXFxri2RN3LsDIknQo/YUFUyJKYbBa076Q8fYzX3shHBfRVFX0YK9abvpD5M/15Gh24BMeOh0hifWN+PhULGzjHeUZvrhRTZFrlrK3GXj/8XXUbszclXQ+zri8TUWrfpkBcMBZX0RM2NykC9YLxAvqoS6IZjt9pQF9URHR/MpFBmn+puqkw1YSiiqxj0F6xCCbDUarvoID5H8MmDSMm6weyJq3eRjjR6J/VbaexNDsVwNoAjCnv8rQBjqcAa/ipMQLhJqg0//2HO/hKlUJQNVxNDa5POOqTHvhUqr7BQHlRAKVyLjyVQXlkTJjFSIfvB+vHXSgEwLnzza2FyLfPD98+k6m1KZ8vR9yc/ucQPifOzXFibdM2IDYkbZOMsHCv4+IuqIoKZoY0wbUYqA1oxD+TdrYNDyV26V0BXUjwEpdlonl5VO37+bD3+9v/xOHszpopXvoIN1ECA==",
+    "expiration": "2026-05-24T18:50:15.000Z"
+  },
+  "name": "student-fee-collector-app",
+  "path": "/home/ubuntu/student-fee-collector-app",
+  "port": 3000,
+  "secrets": {
+    "BUILT_IN_FORGE_API_KEY": "VJED82EiVmnTDWj65xRm5M",
+    "BUILT_IN_FORGE_API_URL": "https://forge.manus.ai",
+    "EXPO_APP_QR_URL": "exps://8081-igbrdymxwlshiiwgzjo0e-582b9a19.us1.manus.computer",
+    "EXPO_PACKAGER_PROXY_URL": "https://8081-igbrdymxwlshiiwgzjo0e-582b9a19.us1.manus.computer",
+    "EXPO_PUBLIC_API_BASE_URL": "https://3000-igbrdymxwlshiiwgzjo0e-582b9a19.us1.manus.computer",
+    "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0amprbHVsZnprd3Fqdm9xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTI4MjcsImV4cCI6MjA4OTY4ODgyN30.S3zxW1VQwJNxebjYCV8FSZb97_goMypPyO_p06bIDrc",
+    "EXPO_PUBLIC_SUPABASE_URL": "https://gtjjklulfzkwqjvoqclg.supabase.co",
+    "JWT_SECRET": "AiuqNJWnMtATVxK7juY6sA",
+    "OAUTH_SERVER_URL": "https://api.manus.im",
+    "OWNER_NAME": "Abdullah Idrees",
+    "OWNER_OPEN_ID": "KYvbFTZ24TCTTgRNStYupW",
+    "REACT_NATIVE_PACKAGER_HOSTNAME": "8081-igbrdymxwlshiiwgzjo0e-582b9a19.us1.manus.computer",
+    "VITE_ANALYTICS_ENDPOINT": "https://manus-analytics.com",
+    "VITE_ANALYTICS_WEBSITE_ID": "2efb3f53-20d0-41c5-97ad-ec144cd855ba",
+    "VITE_APP_ID": "9YtHJ3Tdj8oF3nGcS83H3K",
+    "VITE_APP_LOGO": "https://d2xsxph8kpxj0f.cloudfront.net/310519663390388689/R8hv3yi8WLagUCDyJGMTmX/icon-2v7tDxwo6afRybkPpKew9x.webp",
+    "VITE_APP_TITLE": "Student Fee Collector",
+    "VITE_FRONTEND_FORGE_API_KEY": "BWcTeDfbwttXAVzFZBDnWB",
+    "VITE_FRONTEND_FORGE_API_URL": "https://forge.manus.ai",
+    "VITE_OAUTH_PORTAL_URL": "https://manus.im"
+  },
+  "template_id": "app",
+  "test_command": "pnpm test"
+}
