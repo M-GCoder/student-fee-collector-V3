@@ -35,6 +35,42 @@ export interface StudentWithPayments extends Student {
 }
 
 /**
+ * Class data type
+ */
+export interface Class {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+/**
+ * Result data type for class-specific results
+ */
+export interface Result {
+  id: string;
+  classId: string;
+  fileName: string;
+  fileUrl: string;
+  fileSize: number;
+  uploadedAt: string;
+}
+
+/**
+ * Announcement data type
+ */
+export interface Announcement {
+  id: string;
+  title: string;
+  description: string;
+  classId: string; // "all" for all classes
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  expiryDate: string; // ISO date string
+  createdAt: string;
+}
+
+/**
  * Month display format
  */
 export const MONTHS = [

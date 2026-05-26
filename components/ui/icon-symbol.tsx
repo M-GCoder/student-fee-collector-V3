@@ -21,6 +21,9 @@ const MAPPING = {
   "clock.fill": "history",
   "gear": "settings",
   "book.fill": "summarize",
+  "building.2.fill": "domain",
+  "doc.fill": "description",
+  "bell.fill": "notifications",
 } as IconMapping;
 
 /**
