@@ -35,6 +35,32 @@ export interface StudentWithPayments extends Student {
 }
 
 /**
+ * Timetable entry for a class (subject + time period)
+ */
+export interface Timetable {
+  id: string;
+  classId: string;
+  day: string; // Monday, Tuesday, etc.
+  subject: string;
+  startTime: string; // HH:MM format
+  endTime: string; // HH:MM format
+  createdAt: string;
+}
+
+/**
+ * Test schedule for a class
+ */
+export interface TestSchedule {
+  id: string;
+  classId: string;
+  subject: string;
+  testDate: string; // ISO date string
+  startTime?: string; // HH:MM format
+  endTime?: string; // HH:MM format
+  createdAt: string;
+}
+
+/**
  * Class data type
  */
 export interface Class {

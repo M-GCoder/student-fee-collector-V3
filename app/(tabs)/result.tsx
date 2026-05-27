@@ -133,14 +133,28 @@ export default function ResultScreen() {
     ? results.filter((r) => r.classId === selectedClassId)
     : [];
 
+  const getTimeAgo = (dateString: string): string => {
+    const uploadDate = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - uploadDate.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return uploadDate.toLocaleDateString();
+  };
+
   const renderResultItem = ({ item }: { item: Result }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
       <View className="flex-row items-start justify-between mb-2">
         <View className="flex-1">
           <Text className="text-base font-semibold text-foreground">{item.fileName}</Text>
           <Text className="text-xs text-muted mt-1">
-            {(item.fileSize / 1024 / 1024).toFixed(2)}MB • Uploaded{" "}
-            {new Date(item.uploadedAt).toLocaleDateString()}
+            {(item.fileSize / 1024 / 1024).toFixed(2)}MB • {getTimeAgo(item.uploadedAt)}
           </Text>
         </View>
       </View>

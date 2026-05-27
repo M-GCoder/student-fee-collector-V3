@@ -202,6 +202,21 @@ export default function AnnouncementScreen() {
     return classes.find((c) => c.id === classId)?.name || "Unknown";
   };
 
+  const getTimeAgo = (dateString: string): string => {
+    const createdDate = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - createdDate.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return createdDate.toLocaleDateString();
+  };
+
   const renderAnnouncementItem = ({ item }: { item: Announcement }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
       <View className="mb-2">
@@ -212,7 +227,10 @@ export default function AnnouncementScreen() {
             {getClassNameById(item.classId)}
           </Text>
           <Text className="text-xs bg-warning/20 text-warning px-2 py-1 rounded">
-            Expires: {new Date(item.expiryDate).toLocaleDateString()}
+            Posted {getTimeAgo(item.createdAt)}
+          </Text>
+          <Text className="text-xs bg-error/20 text-error px-2 py-1 rounded">
+            Expires {new Date(item.expiryDate).toLocaleDateString()}
           </Text>
         </View>
       </View>
