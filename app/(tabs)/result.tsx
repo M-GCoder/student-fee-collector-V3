@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import {
   ScrollView,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Linking,
+  TextInput,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { Class, Result } from "@/lib/types";
@@ -16,14 +17,17 @@ import { ClassService } from "@/lib/class-service";
 import { ResultService } from "@/lib/result-service";
 import { useFocusEffect } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ResultScreen() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [results, setResults] = useState<Result[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>("");
+  const [examName, setExamName] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showClassSelector, setShowClassSelector] = useState(false);
+  const [showUploadForm, setShowUploadForm] = useState(false);
 
   // Load data when screen is focused
   useFocusEffect(
@@ -58,6 +62,11 @@ export default function ResultScreen() {
       return;
     }
 
+    if (!examName.trim()) {
+      Alert.alert("Error", "Please enter exam name");
+      return;
+    }
+
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ["image/*", "application/pdf"],
@@ -85,6 +94,7 @@ export default function ResultScreen() {
       // Upload file
       const uploadedResult = await ResultService.uploadResult(
         selectedClassId,
+        examName,
         file.uri,
         fileName,
         fileSize
@@ -93,6 +103,10 @@ export default function ResultScreen() {
       // Reload results
       const updatedResults = await ResultService.getLocalResults();
       setResults(updatedResults);
+
+      // Reset form
+      setExamName("");
+      setShowUploadForm(false);
 
       Alert.alert("Success", "Result uploaded successfully");
     } catch (error) {
@@ -152,7 +166,8 @@ export default function ResultScreen() {
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
       <View className="flex-row items-start justify-between mb-2">
         <View className="flex-1">
-          <Text className="text-base font-semibold text-foreground">{item.fileName}</Text>
+          <Text className="text-base font-semibold text-foreground">{item.examName}</Text>
+          <Text className="text-sm text-muted mt-1">{item.fileName}</Text>
           <Text className="text-xs text-muted mt-1">
             {(item.fileSize / 1024 / 1024).toFixed(2)}MB • {getTimeAgo(item.uploadedAt)}
           </Text>
@@ -205,7 +220,7 @@ export default function ResultScreen() {
           <>
             {/* Upload Button */}
             <TouchableOpacity
-              onPress={handlePickFile}
+              onPress={() => setShowUploadForm(true)}
               disabled={uploading}
               className="bg-primary px-4 py-3 rounded-lg items-center mb-6"
             >
@@ -264,6 +279,67 @@ export default function ResultScreen() {
             >
               <Text className="text-foreground font-semibold">Close</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Upload Form Modal */}
+      <Modal visible={showUploadForm} animationType="slide" transparent={true}>
+        <View className="flex-1 bg-black/50 items-center justify-center p-4">
+          <View className="bg-background rounded-2xl p-6 w-full max-w-sm">
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text className="text-2xl font-bold text-foreground mb-6">Upload Result</Text>
+
+              {/* Class Selector */}
+              <Text className="text-sm font-semibold text-foreground mb-2">Class</Text>
+              <TouchableOpacity
+                onPress={() => setShowClassSelector(true)}
+                className="border border-border rounded-lg px-4 py-3 mb-6 flex-row items-center justify-between"
+              >
+                <Text className="text-foreground font-semibold flex-1">{getSelectedClassName()}</Text>
+                <Text className="text-primary">v</Text>
+              </TouchableOpacity>
+
+              {/* Exam Name Input */}
+              <Text className="text-sm font-semibold text-foreground mb-2">Exam Name</Text>
+              <TextInput
+                placeholder="e.g., Midterm Exam, Final Test"
+                value={examName}
+                onChangeText={setExamName}
+                className="border border-border rounded-lg px-4 py-3 mb-6 text-foreground"
+                placeholderTextColor="#687076"
+              />
+
+              {/* File Upload Info */}
+              <Text className="text-sm font-semibold text-foreground mb-2">Select File</Text>
+              <TouchableOpacity
+                onPress={handlePickFile}
+                disabled={uploading || !examName.trim()}
+                className="border-2 border-dashed border-primary rounded-lg px-4 py-6 items-center mb-6"
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" color="#0a7ea4" />
+                ) : (
+                  <>
+                    <Text className="text-primary font-semibold text-lg">📁</Text>
+                    <Text className="text-primary font-semibold mt-2">Choose Image or PDF</Text>
+                    <Text className="text-xs text-muted mt-1">Max 5MB</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowUploadForm(false);
+                    setExamName("");
+                  }}
+                  className="flex-1 bg-border px-4 py-3 rounded-lg items-center"
+                >
+                  <Text className="text-foreground font-semibold">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>

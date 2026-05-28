@@ -57,6 +57,7 @@ export class ResultService {
    */
   static async uploadResult(
     classId: string,
+    examName: string,
     fileUri: string,
     fileName: string,
     fileSize: number
@@ -98,6 +99,7 @@ export class ResultService {
           const result: Result = {
             id: resultId,
             classId,
+            examName,
             fileName,
             fileUrl,
             fileSize,

@@ -75,6 +75,7 @@ export interface Class {
 export interface Result {
   id: string;
   classId: string;
+  examName: string; // Name of the exam
   fileName: string;
   fileUrl: string;
   fileSize: number;
