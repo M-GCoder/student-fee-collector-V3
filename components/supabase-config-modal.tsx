@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Modal,
   View,
@@ -14,6 +14,8 @@ import { useColors } from "@/hooks/use-colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SupabaseSyncService } from "@/lib/supabase-sync-service";
 import { DynamicSupabaseClient } from "@/lib/supabase-dynamic-client";
+import { AutoSyncService } from "@/lib/auto-sync-service";
+import { AutomaticImportService } from "@/lib/automatic-import-service";
 
 interface SupabaseConfigModalProps {
   visible: boolean;
@@ -35,6 +37,44 @@ export function SupabaseConfigModal({
   const [anonKey, setAnonKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+  const [autoImportEnabled, setAutoImportEnabled] = useState(false);
+
+  // Load preferences on mount
+  React.useEffect(() => {
+    const loadPreferences = async () => {
+      const syncEnabled = await AutoSyncService.isAutoSyncEnabled();
+      setAutoSyncEnabled(syncEnabled);
+      const importEnabled = await AutomaticImportService.isAutoImportEnabled();
+      setAutoImportEnabled(importEnabled);
+    };
+    if (visible) {
+      loadPreferences();
+    }
+  }, [visible]);
+
+  const handleToggleAutoSync = async () => {
+    try {
+      const newState = await AutoSyncService.toggleAutoSync();
+      setAutoSyncEnabled(newState);
+    } catch (error) {
+      console.error("Error toggling auto-sync:", error);
+    }
+  };
+
+  const handleToggleAutoImport = async () => {
+    try {
+      if (autoImportEnabled) {
+        await AutomaticImportService.disableAutoImport();
+        setAutoImportEnabled(false);
+      } else {
+        await AutomaticImportService.enableAutoImport();
+        setAutoImportEnabled(true);
+      }
+    } catch (error) {
+      console.error("Error toggling auto-import:", error);
+    }
+  };
 
   const handleTestConnection = async () => {
     if (!projectUrl.trim() || !anonKey.trim()) {
@@ -338,6 +378,98 @@ export function SupabaseConfigModal({
               </TouchableOpacity>
             </View>
               </>
+            )}
+
+            {/* Cloud Sync Settings */}
+            {!isFirstLaunch && (
+              <View style={{ marginBottom: 24 }}>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
+                  Cloud Sync Settings
+                </Text>
+
+                <TouchableOpacity
+                  onPress={handleToggleAutoSync}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    marginBottom: 12,
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="cloud-sync" size={20} color={colors.primary} />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Auto-Sync on Launch</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Automatically sync data when app starts</Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 50,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: autoSyncEnabled ? colors.success : colors.border,
+                      justifyContent: "center",
+                      paddingHorizontal: 2,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: "white",
+                        marginLeft: autoSyncEnabled ? 24 : 0,
+                      }}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleToggleAutoImport}
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 16,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons name="cloud-download" size={20} color={colors.primary} />
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Auto-Import from Cloud</Text>
+                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Automatically import data synced from other devices</Text>
+                  </View>
+                  <View
+                    style={{
+                      width: 50,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: autoImportEnabled ? colors.success : colors.border,
+                      justifyContent: "center",
+                      paddingHorizontal: 2,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 12,
+                        backgroundColor: "white",
+                        marginLeft: autoImportEnabled ? 24 : 0,
+                      }}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
             )}
 
             {/* Info Section */}
