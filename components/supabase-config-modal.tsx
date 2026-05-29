@@ -11,17 +11,13 @@ import {
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { SupabaseSyncService } from "@/lib/supabase-sync-service";
 import { DynamicSupabaseClient } from "@/lib/supabase-dynamic-client";
-import { AutoSyncService } from "@/lib/auto-sync-service";
-import { AutomaticImportService } from "@/lib/automatic-import-service";
+import { AutoSyncService, type SyncStatus } from "@/lib/auto-sync-service";
 
 interface SupabaseConfigModalProps {
   visible: boolean;
   onClose: () => void;
   onConfigured?: () => void;
-  onSyncComplete?: () => void;
   isFirstLaunch?: boolean;
 }
 
@@ -29,52 +25,28 @@ export function SupabaseConfigModal({
   visible,
   onClose,
   onConfigured,
-  onSyncComplete,
   isFirstLaunch = false,
 }: SupabaseConfigModalProps) {
   const colors = useColors();
   const [projectUrl, setProjectUrl] = useState("");
   const [anonKey, setAnonKey] = useState("");
   const [loading, setLoading] = useState(false);
-  const [syncInProgress, setSyncInProgress] = useState(false);
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-  const [autoImportEnabled, setAutoImportEnabled] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    isOnline: true,
+    isSyncing: false,
+    lastSyncTime: null,
+    pendingChanges: 0,
+    error: null,
+  });
 
-  // Load preferences on mount
+  // Subscribe to sync status changes
   useEffect(() => {
-    const loadPreferences = async () => {
-      const syncEnabled = await AutoSyncService.isAutoSyncEnabled();
-      setAutoSyncEnabled(syncEnabled);
-      const importEnabled = await AutomaticImportService.isAutoImportEnabled();
-      setAutoImportEnabled(importEnabled);
-    };
-    if (visible) {
-      loadPreferences();
-    }
-  }, [visible]);
+    const unsubscribe = AutoSyncService.onStatusChange((status) => {
+      setSyncStatus(status);
+    });
 
-  const handleToggleAutoSync = async () => {
-    try {
-      const newState = await AutoSyncService.toggleAutoSync();
-      setAutoSyncEnabled(newState);
-    } catch (error) {
-      console.error("Error toggling auto-sync:", error);
-    }
-  };
-
-  const handleToggleAutoImport = async () => {
-    try {
-      if (autoImportEnabled) {
-        await AutomaticImportService.disableAutoImport();
-        setAutoImportEnabled(false);
-      } else {
-        await AutomaticImportService.enableAutoImport();
-        setAutoImportEnabled(true);
-      }
-    } catch (error) {
-      console.error("Error toggling auto-import:", error);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   const handleTestConnection = async () => {
     if (!projectUrl.trim() || !anonKey.trim()) {
@@ -84,12 +56,15 @@ export function SupabaseConfigModal({
 
     try {
       setLoading(true);
-      
+
       // Save configuration to DynamicSupabaseClient
       await DynamicSupabaseClient.setConfig(projectUrl.trim(), anonKey.trim());
 
       // Test connection
-      const isConnected = await DynamicSupabaseClient.testConnection(projectUrl.trim(), anonKey.trim());
+      const isConnected = await DynamicSupabaseClient.testConnection(
+        projectUrl.trim(),
+        anonKey.trim()
+      );
 
       if (isConnected) {
         Alert.alert("Success", "Connected to Supabase successfully!", [
@@ -114,77 +89,19 @@ export function SupabaseConfigModal({
     }
   };
 
-  const handleSyncToCloud = async () => {
-    try {
-      setSyncInProgress(true);
-      Alert.alert("Syncing", "Uploading your data to Supabase cloud...");
+  const formatLastSync = () => {
+    if (!syncStatus.lastSyncTime) return "Never";
+    const date = new Date(syncStatus.lastSyncTime);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
 
-      // Get students and payments from local storage
-      const studentsJson = await AsyncStorage.getItem("students");
-      const paymentsJson = await AsyncStorage.getItem("payments");
-
-      const students = studentsJson ? JSON.parse(studentsJson) : [];
-      const payments = paymentsJson ? JSON.parse(paymentsJson) : [];
-
-      // Sync to cloud
-      await SupabaseSyncService.logSyncOperation("syncing");
-
-      if (students.length > 0) {
-        await SupabaseSyncService.syncStudentsToCloud(students);
-      }
-
-      if (payments.length > 0) {
-        await SupabaseSyncService.syncPaymentsToCloud(payments);
-      }
-
-      await SupabaseSyncService.logSyncOperation("completed");
-
-      Alert.alert(
-        "Sync Complete",
-        `Synced ${students.length} students and ${payments.length} payments to cloud`
-      );
-
-      onSyncComplete?.();
-    } catch (error) {
-      await SupabaseSyncService.logSyncOperation(
-        "failed",
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      Alert.alert("Error", `Sync failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
-      setSyncInProgress(false);
-    }
-  };
-
-  const handleImportFromCloud = async () => {
-    try {
-      setSyncInProgress(true);
-      Alert.alert("Importing", "Downloading your data from Supabase cloud...");
-
-      // Fetch from cloud
-      const students = await SupabaseSyncService.fetchStudentsFromCloud();
-      const payments = await SupabaseSyncService.fetchPaymentsFromCloud();
-
-      // Save to local storage
-      if (students.length > 0) {
-        await AsyncStorage.setItem("students", JSON.stringify(students));
-      }
-
-      if (payments.length > 0) {
-        await AsyncStorage.setItem("payments", JSON.stringify(payments));
-      }
-
-      Alert.alert(
-        "Import Complete",
-        `Imported ${students.length} students and ${payments.length} payments from cloud`
-      );
-
-      onSyncComplete?.();
-    } catch (error) {
-      Alert.alert("Error", `Import failed: ${error instanceof Error ? error.message : "Unknown error"}`);
-    } finally {
-      setSyncInProgress(false);
-    }
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
   };
 
   return (
@@ -218,7 +135,7 @@ export function SupabaseConfigModal({
               </Text>
             </View>
             {!isFirstLaunch && (
-              <TouchableOpacity onPress={onClose} disabled={syncInProgress}>
+              <TouchableOpacity onPress={onClose} disabled={syncStatus.isSyncing}>
                 <MaterialIcons name="close" size={24} color={colors.foreground} />
               </TouchableOpacity>
             )}
@@ -251,7 +168,7 @@ export function SupabaseConfigModal({
                   placeholder="https://your-project.supabase.co"
                   value={projectUrl}
                   onChangeText={setProjectUrl}
-                  editable={!syncInProgress}
+                  editable={!syncStatus.isSyncing}
                   style={{
                     backgroundColor: colors.background,
                     color: colors.foreground,
@@ -280,7 +197,7 @@ export function SupabaseConfigModal({
                   placeholder="eyJhbGciOiJIUzI1NiIs..."
                   value={anonKey}
                   onChangeText={setAnonKey}
-                  editable={!syncInProgress}
+                  editable={!syncStatus.isSyncing}
                   secureTextEntry
                   style={{
                     backgroundColor: colors.background,
@@ -297,7 +214,7 @@ export function SupabaseConfigModal({
 
               <TouchableOpacity
                 onPress={handleTestConnection}
-                disabled={loading || syncInProgress}
+                disabled={loading || syncStatus.isSyncing}
                 style={{
                   backgroundColor: colors.primary,
                   borderRadius: 8,
@@ -306,7 +223,7 @@ export function SupabaseConfigModal({
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
-                  opacity: loading || syncInProgress ? 0.6 : 1,
+                  opacity: loading || syncStatus.isSyncing ? 0.6 : 1,
                 }}
               >
                 {loading ? (
@@ -325,172 +242,121 @@ export function SupabaseConfigModal({
                 {/* Automatic Sync Status */}
                 <View style={{ marginBottom: 24 }}>
                   <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
-                    Automatic Sync
+                    Automatic Sync Status
                   </Text>
 
-              <TouchableOpacity
-                onPress={handleSyncToCloud}
-                disabled={syncInProgress}
-                style={{
-                  backgroundColor: colors.success,
-                  borderRadius: 8,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 12,
-                  opacity: syncInProgress ? 0.6 : 1,
-                }}
-              >
-                {syncInProgress ? (
-                  <ActivityIndicator color="#ffffff" style={{ marginRight: 8 }} />
-                ) : (
-                  <MaterialIcons name="cloud-upload" size={20} color="#ffffff" />
-                )}
-                <Text style={{ color: "#ffffff", fontWeight: "600", marginLeft: 8 }}>
-                  {syncInProgress ? "Syncing..." : "Sync to Cloud"}
-                </Text>
-              </TouchableOpacity>
+                  <View
+                    style={{
+                      backgroundColor: syncStatus.isOnline ? colors.success + "20" : colors.warning + "20",
+                      borderRadius: 8,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: syncStatus.isOnline ? colors.success + "40" : colors.warning + "40",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                      <MaterialIcons
+                        name={syncStatus.isOnline ? "cloud-done" : "cloud-off"}
+                        size={20}
+                        color={syncStatus.isOnline ? colors.success : colors.warning}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "600",
+                          color: syncStatus.isOnline ? colors.success : colors.warning,
+                          marginLeft: 8,
+                        }}
+                      >
+                        {syncStatus.isOnline ? "Online" : "Offline"}
+                      </Text>
+                    </View>
+                    <Text style={{ fontSize: 12, color: colors.muted }}>
+                      {syncStatus.isOnline
+                        ? "Your data is automatically syncing to the cloud."
+                        : "Offline mode: Changes will sync when connection is restored."}
+                    </Text>
+                  </View>
 
-              <TouchableOpacity
-                onPress={handleImportFromCloud}
-                disabled={syncInProgress}
-                style={{
-                  backgroundColor: colors.primary,
-                  borderRadius: 8,
-                  paddingVertical: 12,
-                  paddingHorizontal: 16,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: syncInProgress ? 0.6 : 1,
-                }}
-              >
-                {syncInProgress ? (
-                  <ActivityIndicator color="#ffffff" style={{ marginRight: 8 }} />
-                ) : (
-                  <MaterialIcons name="cloud-download" size={20} color="#ffffff" />
-                )}
-                <Text style={{ color: "#ffffff", fontWeight: "600", marginLeft: 8 }}>
-                  {syncInProgress ? "Importing..." : "Import from Cloud"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  {syncStatus.isSyncing && (
+                    <View
+                      style={{
+                        backgroundColor: colors.primary + "20",
+                        borderRadius: 8,
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: colors.primary + "40",
+                        marginBottom: 12,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <ActivityIndicator color={colors.primary} style={{ marginRight: 8 }} />
+                      <Text style={{ fontSize: 12, color: colors.primary, fontWeight: "600" }}>
+                        Syncing changes...
+                      </Text>
+                    </View>
+                  )}
+
+                  {syncStatus.pendingChanges > 0 && (
+                    <View
+                      style={{
+                        backgroundColor: colors.warning + "20",
+                        borderRadius: 8,
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: colors.warning + "40",
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, color: colors.warning, fontWeight: "600" }}>
+                        {syncStatus.pendingChanges} pending change{syncStatus.pendingChanges !== 1 ? "s" : ""}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
+                        Will sync when connection is restored
+                      </Text>
+                    </View>
+                  )}
+
+                  <View
+                    style={{
+                      backgroundColor: colors.surface,
+                      borderRadius: 8,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4 }}>Last Sync</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>
+                      {formatLastSync()}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Info Section */}
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 8,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground, marginBottom: 8 }}>
+                    ℹ️ How Automatic Sync Works
+                  </Text>
+                  <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 16 }}>
+                    • When online: Changes sync automatically every 30 seconds{"\n"}
+                    • When offline: Changes are saved locally and queued{"\n"}
+                    • Coming online: Pending changes sync immediately, then latest data is fetched{"\n"}
+                    • No manual action needed - sync happens in the background
+                  </Text>
+                </View>
               </>
             )}
-
-            {/* Cloud Sync Settings */}
-            {!isFirstLaunch && (
-              <View style={{ marginBottom: 24 }}>
-                <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
-                  Cloud Sync Settings
-                </Text>
-
-                <TouchableOpacity
-                  onPress={handleToggleAutoSync}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    marginBottom: 12,
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <MaterialIcons name="cloud-sync" size={20} color={colors.primary} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Auto-Sync on Launch</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Automatically sync data when app starts</Text>
-                  </View>
-                  <View
-                    style={{
-                      width: 50,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: autoSyncEnabled ? colors.success : colors.border,
-                      justifyContent: "center",
-                      paddingHorizontal: 2,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 12,
-                        backgroundColor: "white",
-                        marginLeft: autoSyncEnabled ? 24 : 0,
-                      }}
-                    />
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={handleToggleAutoImport}
-                  style={{
-                    backgroundColor: colors.surface,
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    paddingHorizontal: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <MaterialIcons name="cloud-download" size={20} color={colors.primary} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>Auto-Import from Cloud</Text>
-                    <Text style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Automatically import data synced from other devices</Text>
-                  </View>
-                  <View
-                    style={{
-                      width: 50,
-                      height: 28,
-                      borderRadius: 14,
-                      backgroundColor: autoImportEnabled ? colors.success : colors.border,
-                      justifyContent: "center",
-                      paddingHorizontal: 2,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: 12,
-                        backgroundColor: "white",
-                        marginLeft: autoImportEnabled ? 24 : 0,
-                      }}
-                    />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Info Section */}
-            <View
-              style={{
-                backgroundColor: colors.primary + "20",
-                borderRadius: 8,
-                padding: 12,
-                borderWidth: 1,
-                borderColor: colors.primary + "40",
-              }}
-            >
-              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.primary, marginBottom: 8 }}>
-                ℹ️ How to use
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.muted, lineHeight: 18 }}>
-                {isFirstLaunch
-                  ? "Get your Supabase Project URL and Anon Key from your Supabase dashboard Settings → API. Your database must have 'students' and 'payments' tables."
-                  : "1. Get your Supabase Project URL and Anon Key from your Supabase dashboard\n2. Paste them above and test the connection\n3. Click \"Sync to Cloud\" to upload your data\n4. Click \"Import from Cloud\" to download data from Supabase"}
-              </Text>
-            </View>
           </ScrollView>
         </View>
       </View>
