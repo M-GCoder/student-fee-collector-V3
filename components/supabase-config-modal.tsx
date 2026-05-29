@@ -322,11 +322,11 @@ export function SupabaseConfigModal({
 
             {!isFirstLaunch && (
               <>
-            {/* Sync Actions Section */}
-            <View style={{ marginBottom: 24 }}>
-              <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
-                Sync Actions
-              </Text>
+                {/* Automatic Sync Status */}
+                <View style={{ marginBottom: 24 }}>
+                  <Text style={{ fontSize: 16, fontWeight: "600", color: colors.foreground, marginBottom: 12 }}>
+                    Automatic Sync
+                  </Text>
 
               <TouchableOpacity
                 onPress={handleSyncToCloud}

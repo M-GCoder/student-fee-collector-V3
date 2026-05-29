@@ -65,64 +65,37 @@ export default function RootLayout() {
     checkSupabaseConfig();
   }, []);
 
-  // Auto-sync on app launch and periodic automatic import
+  // Initialize background sync service
   useEffect(() => {
-    const performAutoSync = async () => {
+    const initializeSync = async () => {
       try {
-        // Check if Supabase is configured before attempting auto-sync
-        const isConfigured = await DynamicSupabaseClient.isConfigured();
-        if (!isConfigured) {
-          console.log("Supabase not configured, skipping auto-sync");
-          return;
-        }
-
-        const isAutoSyncEnabled = await AutoSyncService.isAutoSyncEnabled();
-        if (isAutoSyncEnabled) {
-          console.log("Auto-sync enabled, syncing data from cloud...");
-          await SupabaseSyncService.fetchStudentsFromCloud();
-          await SupabaseSyncService.fetchPaymentsFromCloud();
-          await AutoSyncService.updateLastAutoSyncTime();
-          await updateSyncStatus("full");
-          console.log("Auto-sync completed successfully");
-        }
+        console.log("Initializing background sync service...");
+        await AutoSyncService.initialize();
       } catch (error) {
-        console.error("Auto-sync failed:", error);
+        console.error("Error initializing background sync:", error);
       }
     };
-    performAutoSync();
+
+    initializeSync();
+
+    // Cleanup on unmount
+    return () => {
+      AutoSyncService.cleanup();
+    };
   }, []);
 
-  // Periodic automatic import from cloud
+  // Subscribe to sync status changes
   useEffect(() => {
-    const performPeriodicImport = async () => {
-      try {
-        // Check if Supabase is configured before attempting auto-import
-        const isConfigured = await DynamicSupabaseClient.isConfigured();
-        if (!isConfigured) {
-          return;
-        }
+    const unsubscribe = AutoSyncService.onStatusChange((status) => {
+      console.log("[Sync Status]", {
+        isOnline: status.isOnline,
+        isSyncing: status.isSyncing,
+        pendingChanges: status.pendingChanges,
+        lastSync: status.lastSyncTime ? new Date(status.lastSyncTime).toLocaleTimeString() : "never",
+      });
+    });
 
-        const isAutoImportEnabled = await AutomaticImportService.isAutoImportEnabled();
-        if (isAutoImportEnabled) {
-          console.log("Auto-import enabled, checking for cloud data changes...");
-          const dataImported = await CloudImportService.checkAndImportCloudData();
-          if (dataImported) {
-            console.log("Cloud data imported successfully");
-            await updateSyncStatus("full");
-          }
-        }
-      } catch (error) {
-        console.error("Periodic auto-import failed:", error);
-      }
-    };
-
-    // Perform initial check
-    performPeriodicImport();
-
-    // Set up periodic checks every 30 seconds
-    const interval = setInterval(performPeriodicImport, 30000);
-
-    return () => clearInterval(interval);
+    return () => unsubscribe();
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
