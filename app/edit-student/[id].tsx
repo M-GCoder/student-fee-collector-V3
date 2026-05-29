@@ -75,11 +75,19 @@ export default function EditStudentScreen() {
       Alert.alert("Error", "Please enter a valid fee amount");
       return;
     }
-    if (email.trim() && !isValidEmail(email.trim())) {
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter an email address");
+      return;
+    }
+    if (!isValidEmail(email.trim())) {
       Alert.alert("Error", "Please enter a valid email address");
       return;
     }
-    if (password.trim() && password.length < 6) {
+    if (!password.trim()) {
+      Alert.alert("Error", "Please enter a password");
+      return;
+    }
+    if (password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }
@@ -96,8 +104,8 @@ export default function EditStudentScreen() {
         name: name.trim(),
         class: studentClass.trim(),
         monthlyFee: parseFloat(fee),
-        email: email.trim() || undefined,
-        password: password.trim() || undefined,
+        email: email.trim(),
+        password: password.trim(),
         monthlyDueDate: monthlyDueDate ? monthlyDueDate.getDate() : undefined,
       };
       await updateStudent(updatedStudent);
