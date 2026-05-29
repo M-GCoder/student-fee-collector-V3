@@ -19,6 +19,7 @@ The app now supports syncing student and payment data to Supabase cloud, ensurin
 
 ## Step 2: Create Database Tables
 
+### Initial Setup (Run First)
 1. Go to your Supabase dashboard
 2. Click on **SQL Editor** in the left sidebar
 3. Create a new query and paste the SQL from `supabase/migrations/001_create_tables.sql`
@@ -28,6 +29,17 @@ The SQL creates three tables:
 - **students**: Stores student information (name, class, monthly fee, due date)
 - **payments**: Stores payment records (student ID, month, year, payment date, amount)
 - **sync_logs**: Tracks sync operations for debugging
+
+### Add New Tables (Run Second)
+5. Create another new query and paste the SQL from `supabase/migrations/002_add_classes_announcements_results.sql`
+6. Click **Run** to create the new tables
+
+The SQL creates five new tables:
+- **classes**: Stores class information
+- **timetables**: Stores class schedules with subjects and time periods
+- **test_schedules**: Stores test schedules for classes
+- **results**: Stores exam results (images/PDFs)
+- **announcements**: Stores class announcements with optional attachments and expiry dates
 
 ## Step 3: Configure the App
 
@@ -70,7 +82,75 @@ The SQL creates three tables:
 - Existing records are updated with the latest data
 - No data loss during sync operations
 
+## Step 3: Create Storage Buckets
+
+You also need to set up storage buckets for file uploads:
+
+1. Go to **Storage** in your Supabase dashboard
+2. Create a new bucket named **results** (for exam result files, max 5MB)
+3. Create a new bucket named **announcements** (for announcement attachments, max 12MB)
+4. Set appropriate file size limits and make them public if needed
+
 ## Database Schema
+
+### Classes Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT | Primary Key (UUID) |
+| name | TEXT | Class name (unique) |
+| created_at | TIMESTAMP | Creation timestamp |
+| updated_at | TIMESTAMP | Last update timestamp |
+
+### Timetables Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT | Primary Key (UUID) |
+| class_id | TEXT | Foreign key to classes |
+| day | TEXT | Day of week (Monday-Sunday) |
+| subject | TEXT | Subject name |
+| start_time | TEXT | Start time (HH:MM format) |
+| end_time | TEXT | End time (HH:MM format) |
+| created_at | TIMESTAMP | Creation timestamp |
+| updated_at | TIMESTAMP | Last update timestamp |
+
+### Test Schedules Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT | Primary Key (UUID) |
+| class_id | TEXT | Foreign key to classes |
+| subject | TEXT | Subject name |
+| test_date | DATE | Date of the test |
+| start_time | TEXT | Start time (optional, HH:MM format) |
+| end_time | TEXT | End time (optional, HH:MM format) |
+| created_at | TIMESTAMP | Creation timestamp |
+| updated_at | TIMESTAMP | Last update timestamp |
+
+### Results Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT | Primary Key (UUID) |
+| class_id | TEXT | Foreign key to classes |
+| exam_name | TEXT | Name of the exam |
+| file_name | TEXT | Original file name |
+| file_url | TEXT | URL to the file in Supabase Storage |
+| file_size | INTEGER | File size in bytes |
+| uploaded_at | TIMESTAMP | Upload timestamp |
+| created_at | TIMESTAMP | Creation timestamp |
+| updated_at | TIMESTAMP | Last update timestamp |
+
+### Announcements Table
+| Column | Type | Description |
+|--------|------|-------------|
+| id | TEXT | Primary Key (UUID) |
+| title | TEXT | Announcement title |
+| description | TEXT | Announcement description |
+| class_id | TEXT | Foreign key to classes ("all" for all classes) |
+| file_url | TEXT | URL to attached file (optional) |
+| file_name | TEXT | Original file name (optional) |
+| file_size | INTEGER | File size in bytes (optional) |
+| expiry_date | TIMESTAMP | Date when announcement expires |
+| created_at | TIMESTAMP | Creation timestamp |
+| updated_at | TIMESTAMP | Last update timestamp |
 
 ### Students Table
 ```sql

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -41,7 +41,7 @@ export function SupabaseConfigModal({
   const [autoImportEnabled, setAutoImportEnabled] = useState(false);
 
   // Load preferences on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const loadPreferences = async () => {
       const syncEnabled = await AutoSyncService.isAutoSyncEnabled();
       setAutoSyncEnabled(syncEnabled);
