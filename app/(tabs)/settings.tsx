@@ -4,8 +4,7 @@ import { useStudents } from "@/lib/student-context";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { CURRENCY_SYMBOL } from "@/lib/types";
-import { AutoSyncService } from "@/lib/auto-sync-service";
-import { AutomaticImportService } from "@/lib/automatic-import-service";
+import { AutoSyncService, type SyncStatus } from "@/lib/auto-sync-service";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import * as storage from "@/lib/storage";
@@ -26,42 +25,22 @@ export default function SettingsScreen() {
   const [advancedExportVisible, setAdvancedExportVisible] = useState(false);
   const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
   const [syncStatusKey, setSyncStatusKey] = useState(0);
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-  const [autoImportEnabled, setAutoImportEnabled] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    isOnline: true,
+    isSyncing: false,
+    lastSyncTime: null,
+    pendingChanges: 0,
+    error: null,
+  });
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all');
 
   useEffect(() => {
-    const loadPreferences = async () => {
-      const syncEnabled = await AutoSyncService.isAutoSyncEnabled();
-      setAutoSyncEnabled(syncEnabled);
-      const importEnabled = await AutomaticImportService.isAutoImportEnabled();
-      setAutoImportEnabled(importEnabled);
-    };
-    loadPreferences();
+    const unsubscribe = AutoSyncService.onStatusChange((status) => {
+      setSyncStatus(status);
+    });
+
+    return () => unsubscribe();
   }, []);
-
-  const handleToggleAutoSync = async () => {
-    try {
-      const newState = await AutoSyncService.toggleAutoSync();
-      setAutoSyncEnabled(newState);
-    } catch (error) {
-      console.error("Error toggling auto-sync:", error);
-    }
-  };
-
-  const handleToggleAutoImport = async () => {
-    try {
-      if (autoImportEnabled) {
-        await AutomaticImportService.disableAutoImport();
-        setAutoImportEnabled(false);
-      } else {
-        await AutomaticImportService.enableAutoImport();
-        setAutoImportEnabled(true);
-      }
-    } catch (error) {
-      console.error("Error toggling auto-import:", error);
-    }
-  };
 
   // Calculate current month payments
   const currentDate = new Date();
