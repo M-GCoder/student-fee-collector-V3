@@ -159,11 +159,14 @@ function parseCSVLine(line: string): string[] {
 
 /**
  * Validate and parse a CSV row into a Student object
+ * Supports both old format (3 columns) and new format (5+ columns with email/password)
  */
 export function parseStudentRow(row: CSVRow, rowNumber: number): ParsedStudent {
   const name = String(row.column1 || "").trim();
   const classValue = String(row.column2 || "").trim();
   const monthlyFeeStr = String(row.column3 || "").trim();
+  const email = String(row.column4 || "").trim();
+  const password = String(row.column5 || "").trim();
 
   // Validate name
   if (!name) {
@@ -199,12 +202,42 @@ export function parseStudentRow(row: CSVRow, rowNumber: number): ParsedStudent {
     };
   }
 
+  // Validate email if provided
+  if (email && !isValidEmail(email)) {
+    return {
+      name,
+      class: classValue,
+      monthlyFee,
+      isValid: false,
+      error: `Row ${rowNumber}: Invalid email format (Column 4, got "${email}")`,
+    };
+  }
+
+  // Validate password if provided
+  if (password && password.length < 6) {
+    return {
+      name,
+      class: classValue,
+      monthlyFee,
+      isValid: false,
+      error: `Row ${rowNumber}: Password must be at least 6 characters (Column 5)`,
+    };
+  }
+
   return {
     name,
     class: classValue,
     monthlyFee,
     isValid: true,
   };
+}
+
+/**
+ * Validate email format
+ */
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 }
 
 /**
@@ -238,16 +271,21 @@ export function importCSV(csvContent: string): CSVImportResult {
     }
 
     // Create student object
+    const email = String(row.column4 || "").trim();
+    const password = String(row.column5 || "").trim();
+    
     const student: Student = {
       id: `student_${generateId()}`,
       name: parsed.name,
       class: parsed.class,
       monthlyFee: parsed.monthlyFee,
+      email: email || undefined,
+      password: password || undefined,
       createdAt: new Date().toISOString(),
     };
 
     students.push(student);
-    validCount++;
+    validCount++
   }
 
   return {
@@ -264,11 +302,12 @@ export function importCSV(csvContent: string): CSVImportResult {
  * Generate sample CSV content for user reference
  */
 export function generateSampleCSV(): string {
-  return `John Doe,10-A,5000
-Jane Smith,10-B,5500
-Ahmed Khan,9-A,4500
-Priya Sharma,9-B,5000
-Raj Patel,11-A,6000`;
+  return `Name,Class,Fee,Email,Password
+John Doe,10-A,5000,john@example.com,password123
+Jane Smith,10-B,5500,jane@example.com,password456
+Ahmed Khan,9-A,4500,ahmed@example.com,password789
+Priya Sharma,9-B,5000,priya@example.com,password101
+Raj Patel,11-A,6000,raj@example.com,password202`;
 }
 
 /**

@@ -10,14 +10,18 @@ import { getPaymentStatus, getDueDateMessage } from "@/lib/due-date-service";
 import { getMonthlyDueStatusMessage, getMonthlyDueStatusColor } from "@/lib/monthly-due-date-service";
 
 import { SplashLoader } from "@/components/splash-loader";
+import { BulkImportModal } from "@/components/bulk-import-modal";
+import { importCSV } from "@/lib/csv-import-service";
 
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { students, payments, loading, error, refreshData } = useStudents();
+  const { students, payments, loading, error, refreshData, addStudent } = useStudents();
   const [studentPaymentStatus, setStudentPaymentStatus] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredStudents, setFilteredStudents] = useState(students);
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [importingBulk, setImportingBulk] = useState(false);
 
   useEffect(() => {
     refreshData();
@@ -62,6 +66,40 @@ export default function HomeScreen() {
   const handleAddStudent = useCallback(() => {
     router.push("/add-student");
   }, [router]);
+
+  const handleBulkImport = useCallback(
+    async (csvContent: string) => {
+      try {
+        setImportingBulk(true);
+        const result = importCSV(csvContent);
+
+        if (result.validRows === 0) {
+          throw new Error("No valid students found in CSV");
+        }
+
+        // Add all valid students
+        for (const student of result.students) {
+          await addStudent({
+            name: student.name,
+            class: student.class,
+            monthlyFee: student.monthlyFee,
+            email: student.email,
+            password: student.password,
+            monthlyDueDate: student.monthlyDueDate,
+          });
+        }
+
+        // Refresh data
+        await refreshData();
+        setShowBulkImportModal(false);
+      } catch (error) {
+        throw error;
+      } finally {
+        setImportingBulk(false);
+      }
+    },
+    [addStudent, refreshData]
+  );
 
   const handleStudentPress = useCallback((studentId: string) => {
     router.push(`/student-detail/${studentId}`);
@@ -234,27 +272,53 @@ export default function HomeScreen() {
           />
         )}
 
-        {/* Add Student Button */}
+        {/* Action Buttons */}
         {!loading && (
-          <TouchableOpacity
-            onPress={handleAddStudent}
-            style={{
-              backgroundColor: colors.primary,
-              borderRadius: 8,
-              paddingVertical: 16,
-              paddingHorizontal: 20,
-              marginTop: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="add" size={24} color="#ffffff" />
-            <Text className="text-white font-semibold ml-2">Add Student</Text>
-          </TouchableOpacity>
+          <View style={{ marginTop: 16, gap: 12 }}>
+            <TouchableOpacity
+              onPress={handleAddStudent}
+              style={{
+                backgroundColor: colors.primary,
+                borderRadius: 8,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="add" size={24} color="#ffffff" />
+              <Text className="text-white font-semibold ml-2">Add Student</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShowBulkImportModal(true)}
+              style={{
+                backgroundColor: colors.success,
+                borderRadius: 8,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="upload-file" size={24} color="#ffffff" />
+              <Text className="text-white font-semibold ml-2">Bulk Import CSV</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </ScrollView>
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        visible={showBulkImportModal}
+        onClose={() => setShowBulkImportModal(false)}
+        onImport={handleBulkImport}
+        loading={importingBulk}
+      />
     </ScreenContainer>
   );
 }
