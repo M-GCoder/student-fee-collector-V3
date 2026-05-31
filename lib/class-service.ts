@@ -165,6 +165,20 @@ export class ClassService {
   }
 
   /**
+   * Get count of students in a class
+   */
+  static async getStudentCountInClass(classId: string): Promise<number> {
+    try {
+      const storage = await import("./storage-safe");
+      const students = await storage.getStudents();
+      return students.filter((s) => s.class === classId).length;
+    } catch (error) {
+      console.error("Error getting student count:", error);
+      return 0;
+    }
+  }
+
+  /**
    * Sync classes between local and cloud
    */
   static async syncClasses(): Promise<void> {

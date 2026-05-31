@@ -15,7 +15,8 @@ import { ClassService } from "@/lib/class-service";
 import { TimetableService } from "@/lib/timetable-service";
 import { TestScheduleService } from "@/lib/test-schedule-service";
 import { useFocusEffect } from "expo-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useStudents } from "@/lib/student-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -24,8 +25,10 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 
 export default function ClassScreen() {
   const colors = useColors();
+  const { students } = useStudents();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
+  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [showModal, setShowModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [className, setClassName] = useState("");
@@ -61,6 +64,13 @@ export default function ClassScreen() {
     try {
       const loadedClasses = await ClassService.getLocalClasses();
       setClasses(loadedClasses);
+      
+      // Calculate student counts for each class
+      const counts: Record<string, number> = {};
+      for (const classItem of loadedClasses) {
+        counts[classItem.id] = students.filter((s) => s.class === classItem.id).length;
+      }
+      setStudentCounts(counts);
     } catch (error) {
       console.error("Error loading classes:", error);
       Alert.alert("Error", "Failed to load classes");
@@ -68,6 +78,15 @@ export default function ClassScreen() {
       setLoading(false);
     }
   };
+
+  // Update student counts when students change
+  useEffect(() => {
+    const counts: Record<string, number> = {};
+    for (const classItem of classes) {
+      counts[classItem.id] = students.filter((s) => s.class === classItem.id).length;
+    }
+    setStudentCounts(counts);
+  }, [students, classes]);
 
   const loadTimetables = async (classItem: Class) => {
     try {
@@ -116,6 +135,17 @@ export default function ClassScreen() {
   };
 
   const handleDeleteClass = (classItem: Class) => {
+    const studentCount = studentCounts[classItem.id] || 0;
+    
+    if (studentCount > 0) {
+      Alert.alert(
+        "Cannot Delete Class",
+        `This class has ${studentCount} student${studentCount !== 1 ? 's' : ''} assigned to it. Please remove all students from this class before deleting it.`,
+        [{ text: "OK", onPress: () => {} }]
+      );
+      return;
+    }
+    
     Alert.alert("Delete Class", `Are you sure you want to delete "${classItem.name}"?`, [
       { text: "Cancel", onPress: () => {} },
       {
@@ -245,12 +275,17 @@ export default function ClassScreen() {
     setEditingClass(null);
   };
 
-  const renderClassItem = ({ item }: { item: Class }) => (
+  const renderClassItem = ({ item }: { item: Class }) => {
+    const studentCount = studentCounts[item.id] || 0;
+    return (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
       <View className="flex-row items-center justify-between mb-3">
         <Text className="text-lg font-semibold text-foreground flex-1">{item.name}</Text>
       </View>
-      <Text className="text-xs text-muted mb-3">Created {new Date(item.createdAt).toLocaleDateString()}</Text>
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-xs text-muted">Created {new Date(item.createdAt).toLocaleDateString()}</Text>
+        <Text className="text-xs font-semibold text-primary">Students: {studentCount}</Text>
+      </View>
       <View className="flex-row gap-2">
         <TouchableOpacity
           onPress={() => handleEditClass(item)}
@@ -278,7 +313,8 @@ export default function ClassScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+    );
+  };
 
   const renderTimetableItem = ({ item }: { item: Timetable }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border flex-row items-center justify-between">
