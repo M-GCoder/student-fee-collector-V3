@@ -15,7 +15,7 @@ import { ClassService } from "@/lib/class-service";
 import { TimetableService } from "@/lib/timetable-service";
 import { TestScheduleService } from "@/lib/test-schedule-service";
 import { useFocusEffect } from "expo-router";
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useStudents } from "@/lib/student-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
@@ -28,7 +28,6 @@ export default function ClassScreen() {
   const { students } = useStudents();
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(false);
-  const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   const [showModal, setShowModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [className, setClassName] = useState("");
@@ -64,13 +63,6 @@ export default function ClassScreen() {
     try {
       const loadedClasses = await ClassService.getLocalClasses();
       setClasses(loadedClasses);
-      
-      // Calculate student counts for each class
-      const counts: Record<string, number> = {};
-      for (const classItem of loadedClasses) {
-        counts[classItem.id] = students.filter((s) => s.class === classItem.id).length;
-      }
-      setStudentCounts(counts);
     } catch (error) {
       console.error("Error loading classes:", error);
       Alert.alert("Error", "Failed to load classes");
@@ -79,13 +71,13 @@ export default function ClassScreen() {
     }
   };
 
-  // Update student counts when students change
-  useEffect(() => {
+  // Memoized student counts
+  const studentCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
     for (const classItem of classes) {
       counts[classItem.id] = students.filter((s) => s.class === classItem.id).length;
     }
-    setStudentCounts(counts);
+    return counts;
   }, [students, classes]);
 
   const loadTimetables = async (classItem: Class) => {
@@ -136,18 +128,18 @@ export default function ClassScreen() {
 
   const handleDeleteClass = (classItem: Class) => {
     const studentCount = studentCounts[classItem.id] || 0;
-    
+
     if (studentCount > 0) {
       Alert.alert(
         "Cannot Delete Class",
         `This class has ${studentCount} student${studentCount !== 1 ? 's' : ''} assigned to it. Please remove all students from this class before deleting it.`,
-        [{ text: "OK", onPress: () => {} }]
+        [{ text: "OK", onPress: () => { } }]
       );
       return;
     }
-    
+
     Alert.alert("Delete Class", `Are you sure you want to delete "${classItem.name}"?`, [
-      { text: "Cancel", onPress: () => {} },
+      { text: "Cancel", onPress: () => { } },
       {
         text: "Delete",
         onPress: async () => {
@@ -191,7 +183,7 @@ export default function ClassScreen() {
 
   const handleDeleteTimetable = (timetable: Timetable) => {
     Alert.alert("Delete Timetable", "Are you sure you want to delete this entry?", [
-      { text: "Cancel", onPress: () => {} },
+      { text: "Cancel", onPress: () => { } },
       {
         text: "Delete",
         onPress: async () => {
@@ -238,7 +230,7 @@ export default function ClassScreen() {
 
   const handleDeleteTestSchedule = (schedule: TestSchedule) => {
     Alert.alert("Delete Test Schedule", "Are you sure you want to delete this test?", [
-      { text: "Cancel", onPress: () => {} },
+      { text: "Cancel", onPress: () => { } },
       {
         text: "Delete",
         onPress: async () => {
@@ -275,48 +267,48 @@ export default function ClassScreen() {
     setEditingClass(null);
   };
 
-  const renderClassItem = ({ item }: { item: Class }) => {
+  const renderClassItem = useCallback(({ item }: { item: Class }) => {
     const studentCount = studentCounts[item.id] || 0;
     return (
-    <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-lg font-semibold text-foreground flex-1">{item.name}</Text>
+      <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-lg font-semibold text-foreground flex-1">{item.name}</Text>
+        </View>
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-xs text-muted">Created {new Date(item.createdAt).toLocaleDateString()}</Text>
+          <Text className="text-xs font-semibold text-primary">Students: {studentCount}</Text>
+        </View>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => handleEditClass(item)}
+            className="flex-1 bg-primary px-3 py-2 rounded-lg items-center"
+          >
+            <Text className="text-white text-sm font-semibold">Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleSelectClass(item)}
+            className="flex-1 bg-blue-500 px-3 py-2 rounded-lg items-center"
+          >
+            <Text className="text-white text-sm font-semibold">Timetable</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleSelectClassForTests(item)}
+            className="flex-1 bg-orange-500 px-3 py-2 rounded-lg items-center"
+          >
+            <Text className="text-white text-sm font-semibold">Tests</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleDeleteClass(item)}
+            className="flex-1 bg-error px-3 py-2 rounded-lg items-center"
+          >
+            <Text className="text-white text-sm font-semibold">Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-      <View className="flex-row items-center justify-between mb-3">
-        <Text className="text-xs text-muted">Created {new Date(item.createdAt).toLocaleDateString()}</Text>
-        <Text className="text-xs font-semibold text-primary">Students: {studentCount}</Text>
-      </View>
-      <View className="flex-row gap-2">
-        <TouchableOpacity
-          onPress={() => handleEditClass(item)}
-          className="flex-1 bg-primary px-3 py-2 rounded-lg items-center"
-        >
-          <Text className="text-white text-sm font-semibold">Edit</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleSelectClass(item)}
-          className="flex-1 bg-blue-500 px-3 py-2 rounded-lg items-center"
-        >
-          <Text className="text-white text-sm font-semibold">Timetable</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleSelectClassForTests(item)}
-          className="flex-1 bg-orange-500 px-3 py-2 rounded-lg items-center"
-        >
-          <Text className="text-white text-sm font-semibold">Tests</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDeleteClass(item)}
-          className="flex-1 bg-error px-3 py-2 rounded-lg items-center"
-        >
-          <Text className="text-white text-sm font-semibold">Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
     );
-  };
+  }, [studentCounts]);
 
-  const renderTimetableItem = ({ item }: { item: Timetable }) => (
+  const renderTimetableItem = useCallback(({ item }: { item: Timetable }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border flex-row items-center justify-between">
       <View className="flex-1">
         <Text className="text-base font-semibold text-foreground">{item.subject}</Text>
@@ -328,9 +320,9 @@ export default function ClassScreen() {
         <Text className="text-white text-xs font-semibold">Delete</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), []);
 
-  const renderTestScheduleItem = ({ item }: { item: TestSchedule }) => (
+  const renderTestScheduleItem = useCallback(({ item }: { item: TestSchedule }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border flex-row items-center justify-between">
       <View className="flex-1">
         <Text className="text-base font-semibold text-foreground">{item.subject}</Text>
@@ -342,7 +334,7 @@ export default function ClassScreen() {
         <Text className="text-white text-xs font-semibold">Delete</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), []);
 
   return (
     <ScreenContainer className="p-4">
@@ -535,20 +527,15 @@ export default function ClassScreen() {
               {/* Day Selector */}
               <Text className="text-sm font-semibold text-foreground mb-2">Day</Text>
               <View className="border border-border rounded-lg mb-4 overflow-hidden">
-                <FlatList
-                  data={DAYS}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => setTimetableDay(item)}
-                      className={`p-3 border-b border-border ${timetableDay === item ? "bg-primary" : "bg-surface"}`}
-                    >
-                      <Text className={`${timetableDay === item ? "text-white" : "text-foreground"}`}>{item}</Text>
-                    </TouchableOpacity>
-                  )}
-                  keyExtractor={(item) => item}
-                  scrollEnabled={true}
-                  nestedScrollEnabled={true}
-                />
+                {DAYS.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    onPress={() => setTimetableDay(item)}
+                    className={`p-3 border-b border-border ${timetableDay === item ? "bg-primary" : "bg-surface"}`}
+                  >
+                    <Text className={`${timetableDay === item ? "text-white" : "text-foreground"}`}>{item}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               {/* Subject Input */}

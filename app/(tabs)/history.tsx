@@ -1,21 +1,18 @@
-import { View, Text, FlatList, ScrollView } from "react-native";
+import React from "react";
+import { View, Text, ScrollView } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useStudents } from "@/lib/student-context";
-import { useEffect, useState } from "react";
 import { Payment, MONTHS } from "@/lib/types";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 
 export default function HistoryScreen() {
   const colors = useColors();
-  const { students, payments, refreshData } = useStudents();
-  const [sortedPayments, setSortedPayments] = useState<(Payment & { studentName: string })[]>([]);
+  const { students, payments } = useStudents();
 
-  useEffect(() => {
-    refreshData();
-  }, []);
+  // Removed redundant refreshData() on mount since StudentProvider handles it
 
-  useEffect(() => {
+  const sortedPayments = React.useMemo(() => {
     const paymentsWithNames = payments.map((payment) => {
       const student = students.find((s) => s.id === payment.studentId);
       return {
@@ -24,11 +21,9 @@ export default function HistoryScreen() {
       };
     });
 
-    const sorted = paymentsWithNames.sort(
+    return paymentsWithNames.sort(
       (a, b) => new Date(b.paidDate || 0).getTime() - new Date(a.paidDate || 0).getTime()
     );
-
-    setSortedPayments(sorted);
   }, [payments, students]);
 
   const formatDate = (dateString?: string) => {
@@ -43,7 +38,7 @@ export default function HistoryScreen() {
     });
   };
 
-  const getCurrentMonthMetrics = () => {
+  const currentMonthMetrics = React.useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
@@ -56,7 +51,7 @@ export default function HistoryScreen() {
       count: currentMonthPayments.length,
       amount: currentMonthPayments.reduce((sum, p) => sum + p.amount, 0),
     };
-  };
+  }, [sortedPayments]);
 
   const renderPaymentItem = ({ item }: { item: Payment & { studentName: string } }) => (
     <View className="bg-surface rounded-lg p-4 mb-3 border border-border">
@@ -99,12 +94,12 @@ export default function HistoryScreen() {
             </View>
             <View className="border-t border-border pt-4 flex-row justify-around">
               <View className="items-center">
-                <Text className="text-2xl font-bold text-primary">{getCurrentMonthMetrics().count}</Text>
+                <Text className="text-2xl font-bold text-primary">{currentMonthMetrics.count}</Text>
                 <Text className="text-xs text-muted mt-1">Current Month</Text>
               </View>
               <View className="items-center">
                 <Text className="text-2xl font-bold text-success">
-                  RS{getCurrentMonthMetrics().amount}
+                  RS{currentMonthMetrics.amount}
                 </Text>
                 <Text className="text-xs text-muted mt-1">Current Month Amount</Text>
               </View>
@@ -125,13 +120,13 @@ export default function HistoryScreen() {
 
         {/* Payment List */}
         {sortedPayments.length > 0 && (
-          <FlatList
-            data={sortedPayments}
-            renderItem={renderPaymentItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={{ flexGrow: 1 }}
-          />
+          <View className="flex-1">
+            {sortedPayments.map((item) => (
+              <React.Fragment key={item.id}>
+                {renderPaymentItem({ item })}
+              </React.Fragment>
+            ))}
+          </View>
         )}
       </ScrollView>
     </ScreenContainer>

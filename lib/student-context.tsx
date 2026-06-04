@@ -75,7 +75,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
     try {
       const newStudent: Student = {
         ...studentData,
-        id: Date.now().toString(),
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 9),
         createdAt: new Date().toISOString(),
       };
       await storage.saveStudent(newStudent);
@@ -128,7 +128,7 @@ export function StudentProvider({ children }: { children: ReactNode }) {
       if (!student) throw new Error("Student not found");
 
       const newPayment: Payment = {
-        id: Date.now().toString(),
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 9),
         studentId,
         month,
         year,

@@ -1,6 +1,7 @@
 import { OfflineQueueService, QueueItem } from "./offline-queue-service";
 import { DynamicSupabaseClient } from "./supabase-dynamic-client";
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface SyncStatus {
   isOnline: boolean;
@@ -54,12 +55,15 @@ export class AutoSyncService {
       // Initial sync on app start
       await this.triggerSync();
 
-      // Set up periodic sync every 30 seconds
-      this.syncInterval = setInterval(() => {
+      // Set up periodic sync every 60 seconds
+      this.syncInterval = setInterval(async () => {
         if (this.currentStatus.isOnline && !this.syncInProgress) {
-          this.triggerSync();
+          const queue = await OfflineQueueService.getQueue();
+          if (queue.some(item => !item.synced)) {
+            this.triggerSync();
+          }
         }
-      }, 30000);
+      }, 60000);
 
       console.log("[AutoSync] Initialized successfully");
     } catch (error) {
@@ -112,9 +116,6 @@ export class AutoSyncService {
         await OfflineQueueService.markAsSynced(syncedIds);
         await OfflineQueueService.logSyncOperation(true, syncedIds.length);
       }
-
-      // Fetch latest data from cloud
-      await this.fetchLatestData();
 
       this.currentStatus.lastSyncTime = Date.now();
       this.currentStatus.pendingChanges = (await OfflineQueueService.getQueue()).filter(
@@ -180,38 +181,6 @@ export class AutoSyncService {
   }
 
   /**
-   * Fetch latest data from Supabase
-   */
-  private static async fetchLatestData(): Promise<void> {
-    const client = await DynamicSupabaseClient.getClient();
-    if (!client) {
-      console.log("[AutoSync] Supabase not configured, skipping fetch");
-      return;
-    }
-
-    try {
-      console.log("[AutoSync] Fetching latest data from cloud...");
-
-      // Fetch all data types
-      const [students, payments, classes, timetables, testSchedules, results, announcements] =
-        await Promise.all([
-          client.from("students").select("*"),
-          client.from("payments").select("*"),
-          client.from("classes").select("*"),
-          client.from("timetables").select("*"),
-          client.from("test_schedules").select("*"),
-          client.from("results").select("*"),
-          client.from("announcements").select("*"),
-        ]);
-
-      // Emit events or update contexts here
-      // This will be handled by the data contexts
-    } catch (error) {
-      console.error("[AutoSync] Error fetching latest data:", error);
-    }
-  }
-
-  /**
    * Subscribe to sync status changes
    */
   static onStatusChange(listener: (status: SyncStatus) => void): () => void {
@@ -259,5 +228,97 @@ export class AutoSyncService {
 
     this.statusListeners = [];
     console.log("[AutoSync] Cleanup completed");
+  }
+
+  /**
+   * Check if auto-sync is enabled
+   */
+  static async isAutoSyncEnabled(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem("auto_sync_enabled");
+      return value === null || value === "true";
+    } catch (error) {
+      console.error("Error checking auto sync status:", error);
+      return true; // Default to enabled on error
+    }
+  }
+
+  /**
+   * Enable auto-sync
+   */
+  static async enableAutoSync(): Promise<void> {
+    try {
+      await AsyncStorage.setItem("auto_sync_enabled", "true");
+      console.log("Auto sync enabled");
+    } catch (error) {
+      console.error("Error enabling auto sync:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Disable auto-sync
+   */
+  static async disableAutoSync(): Promise<void> {
+    try {
+      await AsyncStorage.setItem("auto_sync_enabled", "false");
+      console.log("Auto sync disabled");
+    } catch (error) {
+      console.error("Error disabling auto sync:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Toggle auto-sync status
+   */
+  static async toggleAutoSync(): Promise<boolean> {
+    try {
+      const currentlyEnabled = await this.isAutoSyncEnabled();
+      const newStatus = !currentlyEnabled;
+      await AsyncStorage.setItem("auto_sync_enabled", newStatus ? "true" : "false");
+      return newStatus;
+    } catch (error) {
+      console.error("Error toggling auto sync:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get last auto-sync time
+   */
+  static async getLastAutoSyncTime(): Promise<Date | null> {
+    try {
+      const value = await AsyncStorage.getItem("last_auto_sync_time");
+      return value ? new Date(value) : null;
+    } catch (error) {
+      console.error("Error getting last auto sync time:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update last auto-sync time to current time
+   */
+  static async updateLastAutoSyncTime(): Promise<void> {
+    try {
+      const now = new Date().toISOString();
+      await AsyncStorage.setItem("last_auto_sync_time", now);
+    } catch (error) {
+      console.error("Error updating last auto sync time:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset auto-sync settings to default
+   */
+  static async resetAutoSyncSettings(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove(["auto_sync_enabled", "last_auto_sync_time"]);
+    } catch (error) {
+      console.error("Error resetting auto sync settings:", error);
+      throw error;
+    }
   }
 }

@@ -249,15 +249,15 @@ Jane Smith,10-B,5500,extra3`;
   });
 
   describe("generateSampleCSV", () => {
-    it("should generate valid sample CSV without headers", () => {
+    it("should generate valid sample CSV with headers", () => {
       const sample = generateSampleCSV();
 
       expect(sample).toContain("John Doe");
       expect(sample).toContain("10-A");
       expect(sample).toContain("5000");
-      // Should NOT have header row
-      expect(sample).not.toContain("Name");
-      expect(sample).not.toContain("Class");
+      // Should have header row
+      expect(sample).toContain("Name");
+      expect(sample).toContain("Class");
     });
 
     it("sample CSV should be importable", () => {

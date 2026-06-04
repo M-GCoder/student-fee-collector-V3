@@ -13,39 +13,85 @@ import { SplashLoader } from "@/components/splash-loader";
 import { BulkImportModal } from "@/components/bulk-import-modal";
 import { importCSV } from "@/lib/csv-import-service";
 
+// Memoized StudentItem component
+const StudentItem = memo(({ item, payments, colors, onPress }: { item: any; payments: Payment[]; colors: any; onPress: () => void }) => {
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentMonthPayment = payments.find(
+    (p) => p.studentId === item.id && p.month === currentMonth && p.year === currentYear
+  );
+
+  let statusMessage = getDueDateMessage(item, payments);
+  let statusColor = colors.warning;
+  let statusIcon = "schedule";
+  let statusLabel = "Pending";
+
+  if (item.monthlyDueDate) {
+    statusMessage = getMonthlyDueStatusMessage(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
+    statusColor = getMonthlyDueStatusColor(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
+
+    if (currentMonthPayment?.paidDate) {
+      statusIcon = "check-circle";
+      statusLabel = "Paid";
+    } else if (statusColor === colors.error) {
+      statusIcon = "error";
+      statusLabel = "Due";
+    } else {
+      statusIcon = "schedule";
+      statusLabel = "Pending";
+    }
+  } else {
+    const status = getPaymentStatus(item, payments);
+    if (status === "paid") {
+      statusColor = colors.success;
+      statusIcon = "check-circle";
+      statusLabel = "Paid";
+    } else if (status === "overdue") {
+      statusColor = colors.error;
+      statusIcon = "error";
+      statusLabel = "Due";
+    }
+  }
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{ opacity: 1 }}
+      activeOpacity={0.7}
+    >
+      <View className="bg-surface rounded-lg p-4 mb-3 border border-border flex-row items-center justify-between">
+        <View className="flex-1">
+          <Text className="text-lg font-semibold text-foreground">{item.name}</Text>
+          <Text className="text-sm text-muted mt-1">
+            Class: {item.class} | Fee: {CURRENCY_SYMBOL}{item.monthlyFee}
+          </Text>
+          <Text className="text-xs mt-2" style={{ color: statusColor }}>
+            {statusMessage}
+          </Text>
+        </View>
+        <View className="items-center ml-4">
+          <View className="rounded-full p-2" style={{ backgroundColor: statusColor }}>
+            <MaterialIcons name={statusIcon as any} size={20} color="#ffffff" />
+          </View>
+          <Text className="text-xs text-muted mt-1 text-center" style={{ maxWidth: 50 }}>
+            {statusLabel}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+StudentItem.displayName = 'StudentItem';
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { students, payments, loading, error, refreshData, addStudent } = useStudents();
-  const [studentPaymentStatus, setStudentPaymentStatus] = useState<Record<string, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredStudents, setFilteredStudents] = useState(students);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [importingBulk, setImportingBulk] = useState(false);
 
-  useEffect(() => {
-    refreshData();
-  }, []);
 
-  // Memoized payment status calculation
-  const studentPaymentStatusMemo = useMemo(() => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    const status: Record<string, boolean> = {};
-    students.forEach((student) => {
-      const paid = payments.some(
-        (p) => p.studentId === student.id && p.month === currentMonth && p.year === currentYear
-      );
-      status[student.id] = paid;
-    });
-    return status;
-  }, [students, payments]);
-
-  useEffect(() => {
-    setStudentPaymentStatus(studentPaymentStatusMemo);
-  }, [studentPaymentStatusMemo]);
 
   // Memoized filtered students to avoid unnecessary recalculations
   const filteredStudentsMemo = useMemo(() => {
@@ -58,10 +104,6 @@ export default function HomeScreen() {
         student.name.toLowerCase().includes(query) || student.class.toLowerCase().includes(query)
     );
   }, [searchQuery, students]);
-
-  useEffect(() => {
-    setFilteredStudents(filteredStudentsMemo);
-  }, [filteredStudentsMemo]);
 
   const handleAddStudent = useCallback(() => {
     router.push("/add-student");
@@ -105,79 +147,9 @@ export default function HomeScreen() {
     router.push(`/student-detail/${studentId}`);
   }, [router]);
 
-  // Memoized StudentItem component to prevent unnecessary re-renders
-  const StudentItem = memo(({ item }: { item: (typeof students)[0] }) => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const currentMonthPayment = payments.find(
-      (p) => p.studentId === item.id && p.month === currentMonth && p.year === currentYear
-    );
-    
-    let statusMessage = getDueDateMessage(item, payments);
-    let statusColor = colors.warning;
-    let statusIcon = "schedule";
-    let statusLabel = "Pending";
-    
-    if (item.monthlyDueDate) {
-      statusMessage = getMonthlyDueStatusMessage(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
-      statusColor = getMonthlyDueStatusColor(item.monthlyDueDate, currentMonth, currentYear, currentMonthPayment?.paidDate);
-      
-      if (currentMonthPayment?.paidDate) {
-        statusIcon = "check-circle";
-        statusLabel = "Paid";
-      } else if (statusColor === colors.error) {
-        statusIcon = "error";
-        statusLabel = "Due";
-      } else {
-        statusIcon = "schedule";
-        statusLabel = "Pending";
-      }
-    } else {
-      const status = getPaymentStatus(item, payments);
-      if (status === "paid") {
-        statusColor = colors.success;
-        statusIcon = "check-circle";
-        statusLabel = "Paid";
-      } else if (status === "overdue") {
-        statusColor = colors.error;
-        statusIcon = "error";
-        statusLabel = "Due";
-      }
-    }
-    return (
-      <TouchableOpacity
-        onPress={() => handleStudentPress(item.id)}
-        style={{ opacity: 1 }}
-        activeOpacity={0.7}
-      >
-        <View className="bg-surface rounded-lg p-4 mb-3 border border-border flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className="text-lg font-semibold text-foreground">{item.name}</Text>
-            <Text className="text-sm text-muted mt-1">
-              Class: {item.class} | Fee: {CURRENCY_SYMBOL}{item.monthlyFee}
-            </Text>
-            <Text className="text-xs mt-2" style={{ color: statusColor }}>
-              {statusMessage}
-            </Text>
-          </View>
-          <View className="items-center ml-4">
-            <View className="rounded-full p-2" style={{ backgroundColor: statusColor }}>
-              <MaterialIcons name={statusIcon as any} size={20} color="#ffffff" />
-            </View>
-            <Text className="text-xs text-muted mt-1 text-center" style={{ maxWidth: 50 }}>
-              {statusLabel}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  });
-
-  StudentItem.displayName = 'StudentItem';
-
-  const renderStudentItem = useCallback(({ item }: { item: (typeof students)[0] }) => (
-    <StudentItem item={item} />
-  ), [StudentItem]);
+  const renderStudentItem = useCallback((item: (typeof students)[0]) => (
+    <StudentItem key={item.id} item={item} payments={payments} colors={colors} onPress={() => handleStudentPress(item.id)} />
+  ), [payments, colors, handleStudentPress]);
 
   if (loading) {
     return <SplashLoader />;
@@ -232,12 +204,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Error State */}
-        {error && (
-          <View className="bg-error/10 border border-error rounded-lg p-4 mb-4">
-            <Text className="text-error text-sm">{error}</Text>
-          </View>
-        )}
+
 
         {/* Empty State */}
         {!loading && students.length === 0 && (
@@ -251,7 +218,7 @@ export default function HomeScreen() {
         )}
 
         {/* No Search Results */}
-        {!loading && students.length > 0 && filteredStudents.length === 0 && (
+        {!loading && students.length > 0 && filteredStudentsMemo.length === 0 && (
           <View className="flex-1 items-center justify-center py-8">
             <MaterialIcons name="search-off" size={48} color={colors.muted} />
             <Text className="text-lg font-semibold text-foreground mt-4">No Results</Text>
@@ -262,14 +229,10 @@ export default function HomeScreen() {
         )}
 
         {/* Student List */}
-        {!loading && filteredStudents.length > 0 && (
-          <FlatList
-            data={filteredStudents}
-            renderItem={renderStudentItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={{ flexGrow: 1 }}
-          />
+        {!loading && filteredStudentsMemo.length > 0 && (
+          <View className="flex-1">
+            {filteredStudentsMemo.map((item) => renderStudentItem(item))}
+          </View>
         )}
 
         {/* Action Buttons */}

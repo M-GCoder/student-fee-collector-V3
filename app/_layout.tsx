@@ -21,10 +21,7 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { StudentProvider } from "@/lib/student-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { AutoSyncService } from "@/lib/auto-sync-service";
-import { SupabaseSyncService } from "@/lib/supabase-sync-service";
-import { updateSyncStatus } from "@/lib/sync-status-service";
-import { CloudImportService } from "@/lib/cloud-import-service";
-import { AutomaticImportService } from "@/lib/automatic-import-service";
+
 import { DynamicSupabaseClient } from "@/lib/supabase-dynamic-client";
 import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 
@@ -49,7 +46,7 @@ export default function RootLayout() {
     initManusRuntime();
   }, []);
 
-  // Check if Supabase is configured on first launch
+  // Check if Supabase is configured on first launch and initialize sync
   useEffect(() => {
     const checkSupabaseConfig = async () => {
       try {
@@ -57,28 +54,16 @@ export default function RootLayout() {
         if (!isConfigured) {
           setShowSupabaseConfig(true);
           setIsFirstLaunch(true);
+        } else {
+          console.log("Initializing background sync service...");
+          await AutoSyncService.initialize();
         }
       } catch (error) {
         console.error("Error checking Supabase config:", error);
       }
     };
     checkSupabaseConfig();
-  }, []);
 
-  // Initialize background sync service
-  useEffect(() => {
-    const initializeSync = async () => {
-      try {
-        console.log("Initializing background sync service...");
-        await AutoSyncService.initialize();
-      } catch (error) {
-        console.error("Error initializing background sync:", error);
-      }
-    };
-
-    initializeSync();
-
-    // Cleanup on unmount
     return () => {
       AutoSyncService.cleanup();
     };

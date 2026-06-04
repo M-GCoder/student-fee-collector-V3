@@ -53,11 +53,8 @@
 
 ## User Requested Changes
 
-- [x] Replace currency symbol from ₹ to RS throughout app
 - [x] Regenerate app logo with RS instead of ₹
 - [x] Add search bar to Home screen
-- [ ] Add download as XLS option
-- [ ] Add download as PDF option
 - [x] Add current month payment count to stats headers
 - [x] Add logo/icon to Payment History screen
 - [x] Add logo/icon to Settings screen
@@ -76,13 +73,10 @@
 - [x] Test notification delivery
 - [x] Add notification badge counter
 
-## Export Feature (XLS/PDF)
+## Export Feature (PDF)
 
-- [x] Create XLS export utility using xlsx library
 - [x] Create PDF export utility using pdf-lib
-- [x] Add XLS export button to Settings screen
 - [x] Add PDF export button to Settings screen
-- [x] Test XLS export functionality
 - [x] Test PDF export functionality
 - [x] Verify exported files contain all student and payment data
 
@@ -122,7 +116,6 @@
 
 - [x] Add ScrollView to Home tab
 - [x] Add ScrollView to History tab
-- [x] Fix XLS export to show only current month data
 - [x] Fix PDF export to show only current month data
 - [x] Update export columns to: Name, Class, Fee, Submit Date, Total Amount
 - [x] Test export functionality with current month data
@@ -349,7 +342,7 @@
 - [x] Default to current month when clicking export directly
 - [x] Integrate into Summary tab with dropdown arrows
 - [x] Test export with different months
-- [x] Support CSV, Excel, and PDF formats
+- [x] Support CSV and PDF formats
 - [x] Show month/year info in export modal
 
 ## Sync Status Indicator (COMPLETED)
@@ -398,25 +391,7 @@
 - [x] Auto-sync disabled on error to prevent app blocking
 - [x] Last sync time tracking with updateLastAutoSyncTime()
 
-## Real-Time Sync on Data Changes (Current)
 
-- [ ] Implement auto-sync on student add
-- [ ] Implement auto-sync on student update
-- [ ] Implement auto-sync on student delete
-- [ ] Implement auto-sync on payment add
-- [ ] Implement auto-sync on payment update
-- [ ] Implement auto-sync on payment delete
-- [ ] Add loading indicators during sync
-- [ ] Handle sync errors gracefully
-
-## Automatic Import from Cloud (Current)
-
-- [ ] Create automatic import service with on/off toggle
-- [ ] Add automatic import toggle to settings screen
-- [ ] Implement periodic cloud data check
-- [ ] Auto-import new/updated data from cloud
-- [ ] Show notification when data imported
-- [ ] Test automatic import functionality
 
 ## Real-Time Sync on Data Changes (COMPLETED)
 

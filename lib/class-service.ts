@@ -50,7 +50,7 @@ export class ClassService {
     await this.saveLocalClasses(classes);
 
     // Sync to cloud if configured
-    if (DynamicSupabaseClient.isConfigured()) {
+    if (await DynamicSupabaseClient.isConfigured()) {
       await this.syncClassToCloud(newClass);
     }
 
@@ -77,7 +77,7 @@ export class ClassService {
     await this.saveLocalClasses(classes);
 
     // Sync to cloud if configured
-    if (DynamicSupabaseClient.isConfigured()) {
+    if (await DynamicSupabaseClient.isConfigured()) {
       await this.syncClassToCloud(updatedClass);
     }
 
@@ -93,7 +93,7 @@ export class ClassService {
     await this.saveLocalClasses(filteredClasses);
 
     // Delete from cloud if configured
-    if (DynamicSupabaseClient.isConfigured()) {
+    if (await DynamicSupabaseClient.isConfigured()) {
       await this.deleteClassFromCloud(id);
     }
   }

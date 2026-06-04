@@ -16,7 +16,7 @@ export function getMonthlyDueDate(monthlyDueDate: number, month: number, year: n
   const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
   const dayOfMonth = Math.min(monthlyDueDate, lastDayOfMonth);
   
-  const dueDate = new Date(year, month, dayOfMonth);
+  const dueDate = new Date(Date.UTC(year, month, dayOfMonth));
   return dueDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
 }
 

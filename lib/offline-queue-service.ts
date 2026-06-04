@@ -79,6 +79,7 @@ export class OfflineQueueService {
         itemIds.includes(item.id) ? { ...item, synced: true } : item
       );
       await AsyncStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(updated));
+      await this.clearSyncedItems(); // Auto-prune synced items
     } catch (error) {
       console.error("Error marking as synced:", error);
       throw error;

@@ -55,19 +55,11 @@ export default function AddStudentScreen() {
       Alert.alert("Error", "Please enter a valid Fee amount");
       return;
     }
-    if (!email.trim()) {
-      Alert.alert("Error", "Please enter an email address");
-      return;
-    }
-    if (!isValidEmail(email.trim())) {
+    if (email.trim() && !isValidEmail(email.trim())) {
       Alert.alert("Error", "Please enter a valid email address");
       return;
     }
-    if (!password.trim()) {
-      Alert.alert("Error", "Please enter a password");
-      return;
-    }
-    if (password.length < 6) {
+    if (password && password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
     }

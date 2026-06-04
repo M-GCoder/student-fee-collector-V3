@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// Mock @react-native-community/netinfo
+vi.mock("@react-native-community/netinfo", () => ({
+  default: {
+    fetch: vi.fn().mockResolvedValue({ isConnected: true }),
+    addEventListener: vi.fn().mockReturnValue(() => {}),
+  },
+}));
+
 import { AutoSyncService } from "../auto-sync-service";
 
 // Mock AsyncStorage

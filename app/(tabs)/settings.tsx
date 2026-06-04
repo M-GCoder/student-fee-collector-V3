@@ -2,14 +2,10 @@ import { View, Text, TouchableOpacity, Alert, ScrollView, ActivityIndicator } fr
 import { ScreenContainer } from "@/components/screen-container";
 import { useStudents } from "@/lib/student-context";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
-import { CURRENCY_SYMBOL } from "@/lib/types";
+import React, { useState, useEffect } from "react";
 import { AutoSyncService, type SyncStatus } from "@/lib/auto-sync-service";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
-import * as storage from "@/lib/storage";
-import { exportAsXLS, exportAsPDF, exportAsCSV } from "@/lib/export-service";
-import { exportCurrentMonthAsXLS, exportCurrentMonthAsPDF, exportCurrentMonthAsCSV } from "@/lib/current-month-export-service";
 import { exportAsCSV as exportAsCSVFlex, exportAsPDF as exportAsPDFFlex } from "@/lib/flexible-export-service";
 import { SupabaseConfigModal } from "@/components/supabase-config-modal";
 import { AdvancedExportModal, type ExportOptions } from "@/components/advanced-export-modal";
@@ -23,7 +19,7 @@ export default function SettingsScreen() {
   const [exporting, setExporting] = useState(false);
   const [supabaseModalVisible, setSupabaseModalVisible] = useState(false);
   const [advancedExportVisible, setAdvancedExportVisible] = useState(false);
-  const [exportFormat, setExportFormat] = useState<"csv" | "xls" | "pdf" | null>(null);
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf" | null>(null);
   const [syncStatusKey, setSyncStatusKey] = useState(0);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     isOnline: true,
@@ -42,29 +38,42 @@ export default function SettingsScreen() {
     return () => unsubscribe();
   }, []);
 
-  // Calculate current month payments
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-  const currentMonthPayments = payments.filter(
-    (p) => p.month === currentMonth && p.year === currentYear
-  );
-  
-  const currentMonthCount = currentMonthPayments.length;
-  const currentMonthAmount = currentMonthPayments.reduce((sum, p) => sum + p.amount, 0);
-  const unpaidCount = students.length - currentMonthCount;
+  const {
+    unpaidCount,
+    filteredPayments,
+    filteredPaidCount,
+    filteredPendingCount,
+    filteredAmount
+  } = React.useMemo(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const monthPayments = payments.filter(
+      (p) => p.month === currentMonth && p.year === currentYear
+    );
 
-  // Filter payments based on selected filter
-  const filteredPayments = paymentFilter === 'all' 
-    ? currentMonthPayments 
-    : paymentFilter === 'paid' 
-    ? currentMonthPayments.filter(p => p.paidDate)
-    : currentMonthPayments.filter(p => !p.paidDate);
+    const monthCount = monthPayments.length;
+    const unpaid = students.length - monthCount;
 
-  // Calculate filtered statistics
-  const filteredPaidCount = currentMonthPayments.filter(p => p.paidDate).length;
-  const filteredPendingCount = currentMonthPayments.filter(p => !p.paidDate).length;
-  const filteredAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+    const filtered = paymentFilter === 'all'
+      ? monthPayments
+      : paymentFilter === 'paid'
+        ? monthPayments.filter(p => p.paidDate)
+        : monthPayments.filter(p => !p.paidDate);
+
+    const paidCount = monthPayments.filter(p => p.paidDate).length;
+    const pendingCount = monthPayments.filter(p => !p.paidDate).length;
+    const amount = filtered.reduce((sum, p) => sum + p.amount, 0);
+
+    return {
+      currentMonthPayments: monthPayments,
+      unpaidCount: unpaid,
+      filteredPayments: filtered,
+      filteredPaidCount: paidCount,
+      filteredPendingCount: pendingCount,
+      filteredAmount: amount
+    };
+  }, [payments, students.length, paymentFilter]);
 
   const handleExportCSV = async () => {
     try {
@@ -79,8 +88,6 @@ export default function SettingsScreen() {
       setExporting(false);
     }
   };
-
-
 
   const handleExportPDF = async () => {
     try {
@@ -103,7 +110,6 @@ export default function SettingsScreen() {
       setExporting(true);
       if (options.format === "csv") {
         await exportAsCSVFlex(students, payments, options.month, options.year);
-
       } else if (options.format === "pdf") {
         await exportAsPDFFlex(students, payments, options.month, options.year);
       }
@@ -321,8 +327,6 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </TouchableOpacity>
 
-
-
             <TouchableOpacity
               onPress={handleExportPDF}
               disabled={exporting || students.length === 0}
@@ -361,7 +365,7 @@ export default function SettingsScreen() {
       <SupabaseConfigModal
         visible={supabaseModalVisible}
         onClose={() => setSupabaseModalVisible(false)}
-        onSyncComplete={async () => {
+        onConfigured={async () => {
           setSupabaseModalVisible(false);
           refreshData();
           await updateSyncStatus('full');

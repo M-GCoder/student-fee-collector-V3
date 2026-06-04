@@ -35,10 +35,10 @@ export function prepareExportData(
       fee: student.monthlyFee,
       paymentDate: payment && payment.paidDate
         ? new Date(payment.paidDate).toLocaleDateString('en-IN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-          })
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        })
         : 'Pending',
     };
   });
@@ -119,8 +119,8 @@ export async function exportAsPDF(
             <th>Payment Date</th>
           </tr>
           ${data
-            .map(
-              (row) => `
+      .map(
+        (row) => `
             <tr>
               <td>${row.name}</td>
               <td>${row.class}</td>
@@ -128,8 +128,8 @@ export async function exportAsPDF(
               <td class="${row.paymentDate === 'Pending' ? 'pending' : ''}">${row.paymentDate}</td>
             </tr>
           `
-            )
-            .join('')}
+      )
+      .join('')}
         </table>
         <div class="summary">
           <p><strong>Total Students:</strong> ${data.length}</p>

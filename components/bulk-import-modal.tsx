@@ -41,8 +41,8 @@ export function BulkImportModal({
         copyToCacheDirectory: true,
       });
 
-      if (result.type === "success") {
-        const fileContent = await FileSystem.readAsStringAsync(result.uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const fileContent = await FileSystem.readAsStringAsync(result.assets[0].uri);
         setCSVContent(fileContent);
         setPreview(true);
       }

@@ -134,7 +134,7 @@ export class AnnouncementService {
     await this.saveLocalAnnouncements(announcements);
 
     // Sync to cloud if configured
-    if (DynamicSupabaseClient.isConfigured()) {
+    if (await DynamicSupabaseClient.isConfigured()) {
       await this.syncAnnouncementToCloud(announcement);
     }
 
@@ -170,7 +170,7 @@ export class AnnouncementService {
     await this.saveLocalAnnouncements(announcements);
 
     // Sync to cloud if configured
-    if (DynamicSupabaseClient.isConfigured()) {
+    if (await DynamicSupabaseClient.isConfigured()) {
       await this.syncAnnouncementToCloud(updatedAnnouncement);
     }
 
@@ -197,7 +197,7 @@ export class AnnouncementService {
       await this.saveLocalAnnouncements(filteredAnnouncements);
 
       // Delete from cloud if configured
-      if (DynamicSupabaseClient.isConfigured()) {
+      if (await DynamicSupabaseClient.isConfigured()) {
         await this.deleteAnnouncementFromCloud(id);
       }
     } catch (error) {
