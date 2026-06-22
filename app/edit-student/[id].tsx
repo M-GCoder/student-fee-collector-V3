@@ -242,7 +242,7 @@ export default function EditStudentScreen() {
 
         {/* Email Field */}
         <View>
-          <Text className="text-sm font-semibold text-foreground mb-2">Email (Optional)</Text>
+          <Text className="text-sm font-semibold text-foreground mb-2">Email</Text>
           <TextInput
             placeholder="Enter student email"
             placeholderTextColor={colors.muted}
@@ -265,7 +265,7 @@ export default function EditStudentScreen() {
 
         {/* Password Field */}
         <View>
-          <Text className="text-sm font-semibold text-foreground mb-2">Password (Optional)</Text>
+          <Text className="text-sm font-semibold text-foreground mb-2">Password</Text>
           <View
             style={{
               flexDirection: "row",
@@ -325,10 +325,10 @@ export default function EditStudentScreen() {
             <Text style={{ fontSize: 16, color: monthlyDueDate ? colors.foreground : colors.muted }}>
               {monthlyDueDate
                 ? monthlyDueDate.toLocaleDateString("en-IN", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
                 : "Select due date"}
             </Text>
             <MaterialIcons name="calendar-today" size={20} color={colors.primary} />

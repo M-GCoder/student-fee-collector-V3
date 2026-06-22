@@ -1,14 +1,4 @@
-import {
-  ScrollView,
-  Text,
-  View,
-  TouchableOpacity,
-  FlatList,
-  TextInput,
-  Modal,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, FlatList, TextInput, Modal, Alert, ActivityIndicator } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { Class, Timetable, TestSchedule } from "@/lib/types";
 import { ClassService } from "@/lib/class-service";
@@ -171,8 +161,8 @@ export default function ClassScreen() {
         timetableEndTime
       );
       setTimetableSubject("");
-      setTimetableStartTime("09:00");
-      setTimetableEndTime("10:00");
+      setTimetableStartTime("05:00");
+      setTimetableEndTime("6:00");
       setShowTimetableModal(false);
       await loadTimetables(selectedClass);
     } catch (error) {
@@ -218,8 +208,8 @@ export default function ClassScreen() {
       );
       setTestSubject("");
       setTestDate(new Date());
-      setTestStartTime("09:00");
-      setTestEndTime("10:00");
+      setTestStartTime("6:00");
+      setTestEndTime("7:00");
       setShowTestModal(false);
       await loadTestSchedules(selectedClass);
     } catch (error) {
